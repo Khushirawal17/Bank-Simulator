@@ -3,7 +3,7 @@ package com.example.bank.simulator1.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "simulator")
-public class SimulatorProperties {
+public class SimulationProperties {
 
 	private String bankName;
 	private int port = 8080;

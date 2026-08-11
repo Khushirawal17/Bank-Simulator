@@ -8,6 +8,7 @@ import com.example.bank.simulator1.dto.VerificationResponse;
 import com.example.bank.simulator1.exception.InvalidRequestException;
 import com.example.bank.simulator1.exception.TransactionNotFoundException;
 import com.example.bank.simulator1.model.Transaction;
+import com.example.bank.simulator1.repository.InMemoryTransactionRepository;
 import com.example.bank.simulator1.repository.TransactionRepository;
 import com.example.bank.simulator1.service.VerificationService;
 import com.example.bank.simulator1.state.TransactionStatus;
@@ -25,7 +26,7 @@ class VerificationServiceTest {
     void setUp() {
 
         transactionRepository =
-                new TransactionRepository();
+                new InMemoryTransactionRepository();
 
         verificationService =
                 new VerificationService(
@@ -127,9 +128,11 @@ class VerificationServiceTest {
                 new Transaction();
 
         transaction.setPrn(prn);
+
         transaction.setAmount(
                 new BigDecimal("100.00")
         );
+
         transaction.setStatus(status);
 
         return transaction;

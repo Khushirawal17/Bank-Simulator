@@ -1,5 +1,7 @@
 package com.example.bank.simulator1.exception;
 
+import java.time.LocalDateTime;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -41,9 +43,15 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ErrorResponse> handleGenericException(Exception exception) {
 
-		ErrorResponse response = new ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred");
+	    ErrorResponse response = new ErrorResponse(
+	            "INTERNAL_ERROR",
+	            exception.getMessage(),
+	            LocalDateTime.now()
+	    );
 
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	    return ResponseEntity
+	            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+	            .body(response);
 	}
 	
 	 @ExceptionHandler(InvalidChecksumException.class)

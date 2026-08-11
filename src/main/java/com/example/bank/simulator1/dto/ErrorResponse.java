@@ -12,6 +12,12 @@ public class ErrorResponse {
 		super();
 	}
 
+	public ErrorResponse(String code, String message) {
+	    this.code = code;
+	    this.message = message;
+	    this.timestamp = LocalDateTime.now();
+	}
+	
 	public ErrorResponse(String code, String message, LocalDateTime timestamp) {
 		super();
 		this.code = code;

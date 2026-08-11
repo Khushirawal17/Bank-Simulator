@@ -6,11 +6,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 
 import com.example.bank.simulator1.config.BankProperties;
 import com.example.bank.simulator1.config.BilldeskProperties;
-import com.example.bank.simulator1.config.SimulatorProperties;
+import com.example.bank.simulator1.config.SimulationProperties;
 
 
 @SpringBootApplication
-@EnableConfigurationProperties({BankProperties.class, BilldeskProperties.class, SimulatorProperties.class})
+@EnableConfigurationProperties({BankProperties.class, BilldeskProperties.class, SimulationProperties.class})
 public class BankSimulator1Application {
 
 	public static void main(String[] args) {

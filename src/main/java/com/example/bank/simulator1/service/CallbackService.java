@@ -23,7 +23,7 @@ public class CallbackService {
 
 	public PaymentCallback buildCallback(Transaction transaction) {
 
-		PaymentCallback callback = this.buildCallback(transaction);
+		PaymentCallback callback = new PaymentCallback();
 
 		callback.setStatus(mapStatus(transaction.getStatus()));
 

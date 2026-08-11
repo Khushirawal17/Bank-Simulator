@@ -1,40 +1,101 @@
 package com.example.bank.simulator1.security;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.example.bank.simulator1.model.SimulationConfig;
 import com.example.bank.simulator1.repository.SimulationConfigRepository;
 import com.example.bank.simulator1.service.SimulationService;
 import com.example.bank.simulator1.state.SimulationMode;
 import com.example.bank.simulator1.state.TransactionStatus;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 class SimulationServiceTest {
 
-	private static final SimulationConfigRepository SimulationConfigRepository = null;
-	private final SimulationService simulationService = new SimulationService(SimulationConfigRepository);
+    private SimulationConfigRepository configRepository;
+    private SimulationService simulationService;
 
-	@Test
-	void normalModeShouldReturnSuccess() {
+    @BeforeEach
+    void setUp() {
+        configRepository = new SimulationConfigRepository();
+        simulationService = new SimulationService(configRepository);
+    }
 
-		assertEquals(TransactionStatus.SUCCESS, simulationService.determineStatus(SimulationMode.NORMAL));
-	}
+    @Test
+    void normalModeShouldReturnSuccess() {
 
-	@Test
-	void forceSuccessShouldReturnSuccess() {
+        configRepository.save(
+                new SimulationConfig(
+                        "PRN001",
+                        SimulationMode.NORMAL,
+                        0
+                )
+        );
 
-		assertEquals(TransactionStatus.SUCCESS, simulationService.determineStatus(SimulationMode.FORCE_SUCCESS));
-	}
+        assertEquals(
+                TransactionStatus.SUCCESS,
+                simulationService.determineStatus("PRN001")
+        );
+    }
 
-	@Test
-	void forceFailureShouldReturnFailure() {
+    @Test
+    void forceSuccessShouldReturnSuccess() {
 
-		assertEquals(TransactionStatus.FAILURE, simulationService.determineStatus(SimulationMode.FORCE_FAILURE));
-	}
+        configRepository.save(
+                new SimulationConfig(
+                        "PRN002",
+                        SimulationMode.FORCE_SUCCESS,
+                        0
+                )
+        );
 
-	@Test
-	void nullModeShouldDefaultToSuccess() {
+        assertEquals(
+                TransactionStatus.SUCCESS,
+                simulationService.determineStatus("PRN002")
+        );
+    }
 
-		assertEquals(TransactionStatus.SUCCESS, simulationService.determineStatus(null));
-	}
+    @Test
+    void forceFailureShouldReturnFailure() {
+
+        configRepository.save(
+                new SimulationConfig(
+                        "PRN003",
+                        SimulationMode.FORCE_FAILURE,
+                        0
+                )
+        );
+
+        assertEquals(
+                TransactionStatus.FAILURE,
+                simulationService.determineStatus("PRN003")
+        );
+    }
+
+    @Test
+    void forcePendingShouldReturnPending() {
+
+        configRepository.save(
+                new SimulationConfig(
+                        "PRN004",
+                        SimulationMode.FORCE_PENDING,
+                        0
+                )
+        );
+
+        assertEquals(
+                TransactionStatus.PENDING,
+                simulationService.determineStatus("PRN004")
+        );
+    }
+
+    @Test
+    void missingConfigurationShouldDefaultToSuccess() {
+
+        assertEquals(
+                TransactionStatus.SUCCESS,
+                simulationService.determineStatus("PRN999")
+        );
+    }
 }
