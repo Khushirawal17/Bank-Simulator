@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Merchant Checkout | BillDesk Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Merchant Demo</div>
+    <div class="secure">🔒 Secure Checkout</div>
+  </header>
+
+  <main class="container">
+    <section class="merchant-card">
+      <div class="product-image">DB</div>
+      <div class="product-info">
+        <p class="eyebrow">Digital Product</p>
+        <h1>Premium Subscription</h1>
+        <p class="muted">One-month premium access for the demo merchant.</p>
+        <div class="price">₹999.00 <span>INR</span></div>
+        <button class="primary full" onclick="startCheckout()">Pay with BillDesk</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

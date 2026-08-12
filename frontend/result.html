@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Result | BillDesk Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">BillDesk</div>
+    <div class="secure">Transaction Response</div>
+  </header>
+
+  <main class="container narrow">
+    <div class="steps">
+      <span class="done">1 Payment</span>
+      <span class="done">2 Bank Scenario</span>
+      <span class="active">3 Result</span>
+    </div>
+
+    <section class="panel result-panel">
+      <div id="resultIcon" class="result-icon">✓</div>
+      <p class="eyebrow" id="resultEyebrow">Bank response</p>
+      <h1 id="resultTitle">Payment Successful</h1>
+      <p class="muted" id="resultMessage">The bank has accepted the transaction.</p>
+
+      <div class="result-box">
+        <div><span>Status</span><strong id="resultStatus">SUCCESS</strong></div>
+        <div><span>PRN</span><strong id="resultPrn">—</strong></div>
+        <div><span>Amount</span><strong id="resultAmount">₹0.00</strong></div>
+        <div><span>Bank</span><strong>DBS Corporate Bank</strong></div>
+        <div><span>Scenario</span><strong id="resultScenario">Normal</strong></div>
+      </div>
+
+      <button class="primary full" onclick="processTransaction()">Process Transaction</button>
+      <button class="text-button" onclick="window.location.href='index.html'">Start New Transaction</button>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

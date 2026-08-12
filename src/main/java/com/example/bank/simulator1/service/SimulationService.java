@@ -1,6 +1,5 @@
 package com.example.bank.simulator1.service;
 
-
 import org.springframework.stereotype.Service;
 
 import com.example.bank.simulator1.model.SimulationConfig;
@@ -15,7 +14,8 @@ public class SimulationService {
 
     public SimulationService(
             SimulationConfigRepository configRepository) {
-            this.configRepository = configRepository;
+
+        this.configRepository = configRepository;
     }
 
     public void configure(
@@ -38,13 +38,13 @@ public class SimulationService {
     }
 
     public SimulationConfig getConfiguration(String prn) {
+
         return configRepository
                 .findByPrn(prn)
                 .orElse(null);
     }
 
-    public TransactionStatus determineStatus(
-            String prn) {
+    public TransactionStatus determineStatus(String prn) {
 
         SimulationConfig config =
                 getConfiguration(prn);
@@ -57,17 +57,17 @@ public class SimulationService {
 
         return switch (config.getSimulationMode()) {
 
-            case NORMAL, FORCE_SUCCESS ->
-                    TransactionStatus.SUCCESS;
+            case SUCCESS ->
+                TransactionStatus.SUCCESS;
 
-            case FORCE_FAILURE ->
-                    TransactionStatus.FAILURE;
+            case FAILURE ->
+                TransactionStatus.FAILURE;
+
+            case PENDING ->
+                TransactionStatus.PENDING;
 
             case DELAY, DROP, DUPLICATE ->
-                    TransactionStatus.SUCCESS;
-                    
-            case FORCE_PENDING ->
-            TransactionStatus.PENDING;
+                TransactionStatus.SUCCESS;
         };
     }
 }

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bank Simulation | BillDesk Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">DBS Corporate Bank</div>
+    <div class="secure">Bank Simulator</div>
+  </header>
+
+  <main class="container narrow">
+    <div class="steps">
+      <span class="done">1 Payment</span>
+      <span class="active">2 Bank Scenario</span>
+      <span>3 Result</span>
+    </div>
+
+    <section class="panel">
+      <p class="eyebrow">Simulation</p>
+      <h1>Select transaction scenario</h1>
+      <p class="muted">Choose how the bank simulator should respond to this transaction.</p>
+
+      <div class="scenario-grid">
+        <button class="scenario selected" data-mode="NORMAL" onclick="selectScenario(this)">
+          <span class="scenario-icon success">✓</span>
+          <span><strong>Normal</strong><small>Process as a successful transaction</small></span>
+        </button>
+
+        <button class="scenario" data-mode="FORCE_SUCCESS" onclick="selectScenario(this)">
+          <span class="scenario-icon success">✓</span>
+          <span><strong>Force Success</strong><small>Always return success</small></span>
+        </button>
+
+        <button class="scenario" data-mode="FORCE_FAILURE" onclick="selectScenario(this)">
+          <span class="scenario-icon failure">×</span>
+          <span><strong>Force Failure</strong><small>Return a failed transaction</small></span>
+        </button>
+
+        <button class="scenario" data-mode="FORCE_PENDING" onclick="selectScenario(this)">
+          <span class="scenario-icon pending">…</span>
+          <span><strong>Force Pending</strong><small>Return a pending transaction</small></span>
+        </button>
+
+        <button class="scenario" data-mode="DELAY" onclick="selectScenario(this)">
+          <span class="scenario-icon delay">◷</span>
+          <span><strong>Delayed Callback</strong><small>Delay the bank callback</small></span>
+        </button>
+
+        <button class="scenario" data-mode="DROP" onclick="selectScenario(this)">
+          <span class="scenario-icon delay">↓</span>
+          <span><strong>Drop Callback</strong><small>Do not send the callback</small></span>
+        </button>
+
+        <button class="scenario" data-mode="DUPLICATE" onclick="selectScenario(this)">
+          <span class="scenario-icon delay">↻</span>
+          <span><strong>Duplicate Callback</strong><small>Send the callback twice</small></span>
+        </button>
+      </div>
+
+      <div id="delayBox" class="field hidden">
+        <label for="delayMs">Callback delay (milliseconds)</label>
+        <input id="delayMs" type="number" min="0" max="30000" value="3000">
+      </div>
+
+      <div class="transaction-mini">
+        <span>Transaction</span>
+        <strong id="prn">—</strong>
+        <span id="scenarioLabel">Normal</span>
+      </div>
+
+      <button id="continueBtn" class="primary full" onclick="processScenario()">Get Result</button>
+      <button class="text-button" onclick="goBack()">← Back</button>
+      <div id="scenarioError" class="error hidden"></div>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

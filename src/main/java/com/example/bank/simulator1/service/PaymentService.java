@@ -30,16 +30,18 @@ public class PaymentService {
 	private final SimulationService simulationService;
 	private final CallbackService callbackService;
 	private final CallbackBehaviorService callbackBehaviourService;
+	private final DoubleVerificationService doubleVerificationService;
 
 	public PaymentService(TransactionRepository transactionRepository, ChecksumService checksumService,
 			AuthenticationService authenticationService, SimulationService simulationService,
-			CallbackService callbackService, CallbackBehaviorService callbackBehaviourService) {
+			CallbackService callbackService, CallbackBehaviorService callbackBehaviourService, DoubleVerificationService doubleVerificationService) {
 		this.transactionRepository = transactionRepository;
 		this.checksumService = checksumService;
 		this.authenticationService = authenticationService;
 		this.simulationService = simulationService;
 		this.callbackService = callbackService;
 		this.callbackBehaviourService = callbackBehaviourService;
+		this.doubleVerificationService = doubleVerificationService;
 	}
 
 	public PaymentResponse processPayment(PaymentRequest request) {
@@ -56,6 +58,10 @@ public class PaymentService {
 		}
 
 		Transaction transaction = createTransaction(request);
+		System.out.println("========== PAYMENT DEBUG ==========");
+		System.out.println("PRN received: " + request.getPrn());
+		System.out.println("PRN created: " + transaction.getPrn());
+		System.out.println("===================================");
 
 		transaction.setStatus(TransactionStatus.VALIDATED);
 
@@ -64,6 +70,10 @@ public class PaymentService {
 			transaction.setUpdatedAt(LocalDateTime.now());
 
 			transactionRepository.save(transaction);
+			System.out.println("========== SAVING TRANSACTION ==========");
+			System.out.println("PRN being saved: " + transaction.getPrn());
+			System.out.println("Status: " + transaction.getStatus());
+			System.out.println("========================================");
 
 			PaymentCallback callback = callbackService.buildCallback(transaction);
 
@@ -78,19 +88,74 @@ public class PaymentService {
 
 		transaction.setPaymentMode(PaymentMode.REAL_TIME);
 
-		transaction.setStatus(simulationService.determineStatus(request.getPrn()));
+		/*
+		 * Determine the result of the simulation.
+		 */
+		TransactionStatus simulationStatus =
+		        simulationService.determineStatus(request.getPrn());
+
+		transaction.setStatus(simulationStatus);
+
+		/*
+		 * Only perform double verification when the
+		 * simulated transaction is successful.
+		 */
+		if (simulationStatus == TransactionStatus.SUCCESS) {
+
+		    log.info(
+		            "Starting double verification. PRN={}",
+		            transaction.getPrn()
+		    );
+
+		    boolean doubleVerificationPassed =
+		            doubleVerificationService.verify(
+		                    transaction.getPrn()
+		            );
+
+		    if (!doubleVerificationPassed) {
+
+		        log.warn(
+		                "Double verification failed. PRN={}",
+		                transaction.getPrn()
+		        );
+
+		        transaction.setStatus(
+		                TransactionStatus.FAILURE
+		        );
+
+		    } else {
+
+		        log.info(
+		                "Double verification successful. PRN={}",
+		                transaction.getPrn()
+		        );
+		    }
+		}
 
 		transaction.setUpdatedAt(LocalDateTime.now());
 
 		transactionRepository.save(transaction);
 
-		PaymentCallback callback = callbackService.buildCallback(transaction);
+		PaymentCallback callback =
+		        callbackService.buildCallback(transaction);
 
-		SimulationConfig config = simulationService.getConfiguration(request.getPrn());
+		SimulationConfig config =
+		        simulationService.getConfiguration(
+		                request.getPrn()
+		        );
 
-		callbackBehaviourService.execute(transaction.getCallbackUrl(), callback, config);
+		callbackBehaviourService.execute(
+		        transaction.getCallbackUrl(),
+		        callback,
+		        config
+		);
 
-		log.info("Payment authentication failed. PRN={}, status={}", transaction.getPrn(), transaction.getStatus());
+		log.info(
+		        "Payment completed. PRN={}, status={}",
+		        transaction.getPrn(),
+		        transaction.getStatus()
+		);
+
 		return buildPaymentResponse(transaction);
 	}
 

@@ -17,12 +17,28 @@ public class InMemoryTransactionRepository implements TransactionRepository {
 
     @Override
     public Transaction save(Transaction transaction) {
+
         transactions.put(transaction.getPrn(), transaction);
+
+        System.out.println("=================================");
+        System.out.println("TRANSACTION SAVED");
+        System.out.println("PRN: " + transaction.getPrn());
+        System.out.println("ALL PRNs: " + transactions.keySet());
+        System.out.println("=================================");
+
         return transaction;
     }
 
     @Override
     public Optional<Transaction> findByPrn(String prn) {
+
+        System.out.println("=================================");
+        System.out.println("SEARCHING TRANSACTION");
+        System.out.println("PRN: " + prn);
+        System.out.println("ALL PRNs: " + transactions.keySet());
+        System.out.println("FOUND: " + transactions.containsKey(prn));
+        System.out.println("=================================");
+
         return Optional.ofNullable(transactions.get(prn));
     }
 

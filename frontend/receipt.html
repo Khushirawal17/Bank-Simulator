@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction Receipt | BillDesk Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="container narrow">
+    <section class="receipt">
+      <div class="receipt-logo">BillDesk</div>
+      <div id="receiptIcon" class="result-icon">✓</div>
+      <h1 id="receiptTitle">Transaction Successful</h1>
+      <p class="muted" id="receiptMessage">Transaction successful</p>
+
+      <div class="receipt-amount" id="receiptAmount">₹999.00</div>
+
+      <div class="receipt-status">
+        <span>TRANSACTION STATUS</span>
+        <strong id="receiptStatus">SUCCESS</strong>
+      </div>
+
+      <div class="receipt-details">
+        <div><span>PRN</span><strong id="receiptPrn">—</strong></div>
+        <div><span>Bank</span><strong>DBS Corporate Bank</strong></div>
+        <div><span>Payment Method</span><strong>Net Banking</strong></div>
+        <div><span>Scenario</span><strong id="receiptScenario">Normal</strong></div>
+        <div><span>Verification</span><strong>Completed</strong></div>
+      </div>
+
+      <button class="primary full" onclick="window.location.href='index.html'">Done</button>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

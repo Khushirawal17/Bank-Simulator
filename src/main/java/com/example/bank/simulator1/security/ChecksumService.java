@@ -33,7 +33,17 @@ public class ChecksumService {
 				safe(request.getPrn()), safe(request.getAmt()), safe(request.getCrn()), safe(request.getRu()),
 				safe(checksumKey));
 
-		return sha256(input);
+		System.out.println("=================================");
+		System.out.println("CHECKSUM INPUT:");
+		System.out.println(input);
+
+		String checksum = sha256(input);
+
+		System.out.println("GENERATED CHECKSUM:");
+		System.out.println(checksum);
+		System.out.println("=================================");
+
+		return checksum;
 	}
 
 	private String sha256(String input) {
