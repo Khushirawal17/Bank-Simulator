@@ -1,72 +1,146 @@
 package com.example.bank.simulator1.security;
 
-import org.springframework.stereotype.Service;
-
-import com.example.bank.simulator1.config.BankProperties;
-import com.example.bank.simulator1.dto.PaymentRequest;
-
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import org.springframework.stereotype.Service;
+
+import com.example.bank.simulator1.config.BankProperties;
+import com.example.bank.simulator1.dto.PaymentRequest;
+import com.example.bank.simulator1.dto.VerificationRequest;
+
 @Service
 public class ChecksumService {
 
-	private final BankProperties bankProperties;
+    private final BankProperties bankProperties;
 
-	public ChecksumService(BankProperties bankProperties) {
-		this.bankProperties = bankProperties;
-	}
+    public ChecksumService(BankProperties bankProperties) {
+        this.bankProperties = bankProperties;
+    }
 
-	public boolean validatePaymentRequest(PaymentRequest request) {
+    // =========================================================
+    // PAYMENT CHECKSUM
+    // =========================================================
 
-		String generatedChecksum = generatePaymentChecksum(request);
+    public boolean validatePaymentRequest(PaymentRequest request) {
 
-		return generatedChecksum.equalsIgnoreCase(request.getCheckVal());
-	}
+        String generatedChecksum =
+                generatePaymentChecksum(request);
 
-	public String generatePaymentChecksum(PaymentRequest request) {
+        return generatedChecksum.equalsIgnoreCase(
+                request.getCheckVal()
+        );
+    }
 
-		String checksumKey = bankProperties.getSecurity().getChecksumKey();
+    public String generatePaymentChecksum(
+            PaymentRequest request) {
 
-		String input = String.join("|", safe(request.getMd()), safe(request.getPid()), safe(request.getNar()),
-				safe(request.getPrn()), safe(request.getAmt()), safe(request.getCrn()), safe(request.getRu()),
-				safe(checksumKey));
+        String checksumKey =
+                bankProperties.getSecurity().getChecksumKey();
 
-		System.out.println("=================================");
-		System.out.println("CHECKSUM INPUT:");
-		System.out.println(input);
+        String input = String.join(
+                "|",
+                safe(request.getMd()),
+                safe(request.getPid()),
+                safe(request.getNar()),
+                safe(request.getPrn()),
+                safe(request.getAmt()),
+                safe(request.getCrn()),
+                safe(request.getRu()),
+                safe(checksumKey)
+        );
 
-		String checksum = sha256(input);
+        return sha256(input);
+    }
 
-		System.out.println("GENERATED CHECKSUM:");
-		System.out.println(checksum);
-		System.out.println("=================================");
+    // =========================================================
+    // VERIFICATION CHECKSUM
+    // =========================================================
 
-		return checksum;
-	}
+    public boolean validateVerificationRequest(
+            VerificationRequest request) {
 
-	private String sha256(String input) {
+        String generatedChecksum =
+                generateVerificationChecksum(request);
 
-		try {
-			MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        return generatedChecksum.equalsIgnoreCase(
+                request.getCheckVal()
+        );
+    }
 
-			byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+    public String generateVerificationChecksum(
+            VerificationRequest request) {
 
-			StringBuilder result = new StringBuilder();
+        String checksumKey =
+                bankProperties.getSecurity().getChecksumKey();
 
-			for (byte value : hash) {
-				result.append(String.format("%02x", value));
-			}
+        String input = String.join(
+                "|",
+                safe(request.getMd()),
+                safe(request.getPid()),
+                safe(request.getPrn()),
+                safe(request.getAmt()),
+                safe(request.getNar()),
+                safe(request.getBid()),
+                safe(request.getCrn()),
+                safe(request.getDate()),
+                safe(request.getData()),
+                safe(checksumKey)
+        );
 
-			return result.toString();
+        System.out.println("=================================");
+        System.out.println("VERIFICATION CHECKSUM INPUT:");
+        System.out.println(input);
 
-		} catch (NoSuchAlgorithmException exception) {
-			throw new IllegalStateException("SHA-256 algorithm is not available", exception);
-		}
-	}
+        String checksum = sha256(input);
 
-	private String safe(String value) {
-		return value == null ? "" : value;
-	}
+        System.out.println("VERIFICATION GENERATED CHECKSUM:");
+        System.out.println(checksum);
+        System.out.println("=================================");
+
+        return checksum;
+    }
+
+    // =========================================================
+    // SHA-256
+    // =========================================================
+
+    private String sha256(String input) {
+
+        try {
+
+            MessageDigest digest =
+                    MessageDigest.getInstance("SHA-256");
+
+            byte[] hash =
+                    digest.digest(
+                            input.getBytes(StandardCharsets.UTF_8)
+                    );
+
+            StringBuilder result =
+                    new StringBuilder();
+
+            for (byte value : hash) {
+
+                result.append(
+                        String.format("%02x", value)
+                );
+            }
+
+            return result.toString();
+
+        } catch (NoSuchAlgorithmException exception) {
+
+            throw new IllegalStateException(
+                    "SHA-256 algorithm is not available",
+                    exception
+            );
+        }
+    }
+
+    private String safe(String value) {
+
+        return value == null ? "" : value;
+    }
 }

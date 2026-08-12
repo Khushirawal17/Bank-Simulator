@@ -2,70 +2,46 @@ package com.example.bank.simulator1.dto;
 
 public class VerificationResponse {
 
-	private String status;
-	private String prn;
-	private String amount;
-	private String bankReferenceNumber;
-	private String message;
-	private String checkval;
-	private String data;
+    private String status;
 
-	public VerificationResponse() {
-	}
+    private String prn;
 
-	public String getStatus() {
-		return status;
-	}
+    private String amount;
 
-	public void setStatus(String status) {
-		this.status = status;
-	}
+    private String message;
 
-	public String getPrn() {
-		return prn;
-	}
+    public VerificationResponse() {
+    }
 
-	public void setPrn(String prn) {
-		this.prn = prn;
-	}
+    public String getStatus() {
+        return status;
+    }
 
-	public String getAmount() {
-		return amount;
-	}
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
-	public void setAmount(String amount) {
-		this.amount = amount;
-	}
+    public String getPrn() {
+        return prn;
+    }
 
-	public String getBankReferenceNumber() {
-		return bankReferenceNumber;
-	}
+    public void setPrn(String prn) {
+        this.prn = prn;
+    }
 
-	public void setBankReferenceNumber(String bankReferenceNumber) {
-		this.bankReferenceNumber = bankReferenceNumber;
-	}
+    public String getAmount() {
+        return amount;
+    }
 
-	public String getMessage() {
-		return message;
-	}
+    public void setAmount(String amount) {
+        this.amount = amount;
+    }
 
-	public void setMessage(String message) {
-		this.message = message;
-	}
+    public String getMessage() {
+        return message;
+    }
 
-	public String getCheckval() {
-		return checkval;
-	}
-
-	public void setCheckval(String checkval) {
-		this.checkval = checkval;
-	}
-
-	public String getData() {
-		return data;
-	}
-
-	public void setData(String data) {
-		this.data = data;
-	}
+    public void setMessage(String message) {
+        this.message = message;
+    }
 }

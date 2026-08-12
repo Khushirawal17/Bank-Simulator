@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import com.example.bank.simulator1.state.PaymentMode;
 import com.example.bank.simulator1.state.TransactionStatus;
+import com.example.bank.simulator1.state.VerificationStatus;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,116 +17,170 @@ import jakarta.persistence.Id;
 @Entity
 public class Transaction {
 
-	
-@Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
-private String prn;
-private String payeeId;
-private String merchantName;
-private BigDecimal amount;
-private String currency;
-private String accountNumber;
-private String callbackUrl;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-@Enumerated(EnumType.STRING)
-private PaymentMode paymentMode;
+    private String prn;
 
-@Enumerated(EnumType.STRING)
-private TransactionStatus status;
+    private String payeeId;
 
-private LocalDateTime createdAt;
-private LocalDateTime updatedAt;
+    private String merchantName;
 
-public Transaction() {
-	super();
-}
+    private BigDecimal amount;
 
-public String getPrn() {
-	return prn;
-}
+    private String currency;
 
-public void setPrn(String prn) {
-	this.prn = prn;
-}
+    private String accountNumber;
 
-public String getPayeeId() {
-	return payeeId;
-}
+    private String callbackUrl;
 
-public void setPayeeId(String payeeId) {
-	this.payeeId = payeeId;
-}
+    private String bankReferenceId;
 
-public String getMerchantName() {
-	return merchantName;
-}
+    private String paymentDate;
 
-public void setMerchantName(String merchantName) {
-	this.merchantName = merchantName;
-}
+    private String errorMessage;
 
-public BigDecimal getAmount() {
-	return amount;
-}
+    @Enumerated(EnumType.STRING)
+    private PaymentMode paymentMode;
 
-public void setAmount(BigDecimal amount) {
-	this.amount = amount;
-}
+    @Enumerated(EnumType.STRING)
+    private TransactionStatus status;
 
-public String getCurrency() {
-	return currency;
-}
+    @Enumerated(EnumType.STRING)
+    private VerificationStatus verificationStatus;
 
-public void setCurrency(String currency) {
-	this.currency = currency;
-}
+    private LocalDateTime createdAt;
 
-public String getAccountNumber() {
-	return accountNumber;
-}
+    private LocalDateTime updatedAt;
 
-public void setAccountNumber(String accountNumber) {
-	this.accountNumber = accountNumber;
-}
+    public Transaction() {
+        super();
+    }
 
-public PaymentMode getPaymentMode() {
-	return paymentMode;
-}
+    public Long getId() {
+        return id;
+    }
 
-public void setPaymentMode(PaymentMode paymentMode) {
-	this.paymentMode = paymentMode;
-}
+    public String getPrn() {
+        return prn;
+    }
 
-public TransactionStatus getStatus() {
-	return status;
-}
+    public void setPrn(String prn) {
+        this.prn = prn;
+    }
 
-public void setStatus(TransactionStatus status) {
-	this.status = status;
-}
+    public String getPayeeId() {
+        return payeeId;
+    }
 
-public LocalDateTime getCreatedAt() {
-	return createdAt;
-}
+    public void setPayeeId(String payeeId) {
+        this.payeeId = payeeId;
+    }
 
-public void setCreatedAt(LocalDateTime createdAt) {
-	this.createdAt = createdAt;
-}
+    public String getMerchantName() {
+        return merchantName;
+    }
 
-public LocalDateTime getUpdatedAt() {
-	return updatedAt;
-}
+    public void setMerchantName(String merchantName) {
+        this.merchantName = merchantName;
+    }
 
-public void setUpdatedAt(LocalDateTime updatedAt) {
-	this.updatedAt = updatedAt;
-}
+    public BigDecimal getAmount() {
+        return amount;
+    }
 
-public String getCallbackUrl() {
-	return callbackUrl;
-}
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
 
-public void setCallbackUrl(String callbackUrl) {
-	this.callbackUrl = callbackUrl;
-}
+    public String getCurrency() {
+        return currency;
+    }
 
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
 
+    public String getAccountNumber() {
+        return accountNumber;
+    }
+
+    public void setAccountNumber(String accountNumber) {
+        this.accountNumber = accountNumber;
+    }
+
+    public String getCallbackUrl() {
+        return callbackUrl;
+    }
+
+    public void setCallbackUrl(String callbackUrl) {
+        this.callbackUrl = callbackUrl;
+    }
+
+    public String getBankReferenceId() {
+        return bankReferenceId;
+    }
+
+    public void setBankReferenceId(String bankReferenceId) {
+        this.bankReferenceId = bankReferenceId;
+    }
+
+    public String getPaymentDate() {
+        return paymentDate;
+    }
+
+    public void setPaymentDate(String paymentDate) {
+        this.paymentDate = paymentDate;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public PaymentMode getPaymentMode() {
+        return paymentMode;
+    }
+
+    public void setPaymentMode(PaymentMode paymentMode) {
+        this.paymentMode = paymentMode;
+    }
+
+    public TransactionStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(TransactionStatus status) {
+        this.status = status;
+    }
+
+    public VerificationStatus getVerificationStatus() {
+        return verificationStatus;
+    }
+
+    public void setVerificationStatus(
+            VerificationStatus verificationStatus) {
+
+        this.verificationStatus = verificationStatus;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

@@ -22,202 +22,419 @@ import com.example.bank.simulator1.state.TransactionStatus;
 @Service
 public class PaymentService {
 
-	private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
+    private static final Logger log =
+            LoggerFactory.getLogger(PaymentService.class);
 
-	private final TransactionRepository transactionRepository;
-	private final ChecksumService checksumService;
-	private final AuthenticationService authenticationService;
-	private final SimulationService simulationService;
-	private final CallbackService callbackService;
-	private final CallbackBehaviorService callbackBehaviourService;
-	private final DoubleVerificationService doubleVerificationService;
+    private final TransactionRepository transactionRepository;
+    private final ChecksumService checksumService;
+    private final AuthenticationService authenticationService;
+    private final SimulationService simulationService;
+    private final CallbackService callbackService;
+    private final CallbackBehaviorService callbackBehaviourService;
 
-	public PaymentService(TransactionRepository transactionRepository, ChecksumService checksumService,
-			AuthenticationService authenticationService, SimulationService simulationService,
-			CallbackService callbackService, CallbackBehaviorService callbackBehaviourService, DoubleVerificationService doubleVerificationService) {
-		this.transactionRepository = transactionRepository;
-		this.checksumService = checksumService;
-		this.authenticationService = authenticationService;
-		this.simulationService = simulationService;
-		this.callbackService = callbackService;
-		this.callbackBehaviourService = callbackBehaviourService;
-		this.doubleVerificationService = doubleVerificationService;
-	}
+    public PaymentService(
+            TransactionRepository transactionRepository,
+            ChecksumService checksumService,
+            AuthenticationService authenticationService,
+            SimulationService simulationService,
+            CallbackService callbackService,
+            CallbackBehaviorService callbackBehaviourService) {
 
-	public PaymentResponse processPayment(PaymentRequest request) {
+        this.transactionRepository = transactionRepository;
+        this.checksumService = checksumService;
+        this.authenticationService = authenticationService;
+        this.simulationService = simulationService;
+        this.callbackService = callbackService;
+        this.callbackBehaviourService = callbackBehaviourService;
+    }
 
-		validatePaymentRequest(request);
+    /**
+     * Main payment processing flow.
+     */
+    public PaymentResponse processPayment(PaymentRequest request) {
+    	System.out.println("========== PAYMENT REQUEST ==========");
+    	System.out.println("PRN: " + request.getPrn());
+    	System.out.println("MD: " + request.getMd());
+    	System.out.println("PID: " + request.getPid());
+    	System.out.println("NAR: " + request.getNar());
+    	System.out.println("AMT: " + request.getAmt());
+    	System.out.println("CRN: " + request.getCrn());
+    	System.out.println("RU: " + request.getRu());
+    	
+    	System.out.println("=====================================");
+       log.info("========== PAYMENT START ==========");
+       log.info("Processing payment for PRN={}", request.getPrn());
 
-		String generatedChecksum = checksumService.generatePaymentChecksum(request);
-		
-		System.out.println("Generated checksum = " + generatedChecksum);
-		System.out.println("Received checksum  = " + request.getCheckVal());
+        // ---------------------------------------------------------
+        // 1. Validate payment request
+        // ---------------------------------------------------------
+        validatePaymentRequest(request);
 
-		if (!generatedChecksum.equalsIgnoreCase(request.getCheckVal())) {
-			throw new InvalidChecksumException("Invalid checksum");
-		}
+        // ---------------------------------------------------------
+        // 2. Validate checksum
+        // ---------------------------------------------------------
+        String generatedChecksum =
+                checksumService.generatePaymentChecksum(request);
 
-		Transaction transaction = createTransaction(request);
-		System.out.println("========== PAYMENT DEBUG ==========");
-		System.out.println("PRN received: " + request.getPrn());
-		System.out.println("PRN created: " + transaction.getPrn());
-		System.out.println("===================================");
+        log.info("Generated checksum = {}", generatedChecksum);
+        log.info("Received checksum  = {}", request.getCheckVal());
+        
+        if (request.getCheckVal() == null || request.getCheckVal().isBlank()) {
+            log.error("CheckVal is NULL or EMPTY");
+            throw new InvalidChecksumException("Checkval is required");
+        }
 
-		transaction.setStatus(TransactionStatus.VALIDATED);
+        if (!generatedChecksum.equalsIgnoreCase(request.getCheckVal())) {
 
-		if (!authenticationService.authenticate(request)) {
-			transaction.setStatus(TransactionStatus.FAILURE);
-			transaction.setUpdatedAt(LocalDateTime.now());
+            log.error(
+                    "Checksum validation failed for PRN={}",
+                    request.getPrn()
+            );
 
-			transactionRepository.save(transaction);
-			System.out.println("========== SAVING TRANSACTION ==========");
-			System.out.println("PRN being saved: " + transaction.getPrn());
-			System.out.println("Status: " + transaction.getStatus());
-			System.out.println("========================================");
+            throw new InvalidChecksumException(
+                    "Invalid checksum"
+            );
+        }
 
-			PaymentCallback callback = callbackService.buildCallback(transaction);
+        log.info(
+                "Checksum validation successful for PRN={}",
+                request.getPrn()
+        );
 
-			SimulationConfig config = simulationService.getConfiguration(request.getPrn());
+        // ---------------------------------------------------------
+        // 3. Create transaction
+        // ---------------------------------------------------------
+        Transaction transaction =
+                createTransaction(request);
 
-			callbackBehaviourService.execute(transaction.getCallbackUrl(), callback, config);
+        transaction.setStatus(
+                TransactionStatus.VALIDATED
+        );
 
-			return buildPaymentResponse(transaction);
-		}
+        transaction.setUpdatedAt(
+                LocalDateTime.now()
+        );
 
-		transaction.setStatus(TransactionStatus.AUTHENTICATED);
+        // ---------------------------------------------------------
+        // 4. Authenticate payment
+        // ---------------------------------------------------------
+        boolean authenticated =
+                authenticationService.authenticate(request);
 
-		transaction.setPaymentMode(PaymentMode.REAL_TIME);
+        if (!authenticated) {
 
-		/*
-		 * Determine the result of the simulation.
-		 */
-		TransactionStatus simulationStatus =
-		        simulationService.determineStatus(request.getPrn());
+            log.warn(
+                    "Authentication failed for PRN={}",
+                    request.getPrn()
+            );
 
-		transaction.setStatus(simulationStatus);
+            transaction.setStatus(
+                    TransactionStatus.FAILURE
+            );
 
-		/*
-		 * Only perform double verification when the
-		 * simulated transaction is successful.
-		 */
-		if (simulationStatus == TransactionStatus.SUCCESS) {
+            transaction.setUpdatedAt(
+                    LocalDateTime.now()
+            );
 
-		    log.info(
-		            "Starting double verification. PRN={}",
-		            transaction.getPrn()
-		    );
+            // IMPORTANT:
+            // Save transaction even when authentication fails.
+            transactionRepository.save(transaction);
 
-		    boolean doubleVerificationPassed =
-		            doubleVerificationService.verify(
-		                    transaction.getPrn()
-		            );
+            sendCallback(transaction);
 
-		    if (!doubleVerificationPassed) {
+            log.info(
+                    "Payment completed with FAILURE for PRN={}",
+                    request.getPrn()
+            );
 
-		        log.warn(
-		                "Double verification failed. PRN={}",
-		                transaction.getPrn()
-		        );
+            return buildPaymentResponse(transaction);
+        }
 
-		        transaction.setStatus(
-		                TransactionStatus.FAILURE
-		        );
+        // ---------------------------------------------------------
+        // 5. Authentication successful
+        // ---------------------------------------------------------
+        transaction.setStatus(
+                TransactionStatus.AUTHENTICATED
+        );
 
-		    } else {
+        transaction.setPaymentMode(
+                PaymentMode.REAL_TIME
+        );
 
-		        log.info(
-		                "Double verification successful. PRN={}",
-		                transaction.getPrn()
-		        );
-		    }
-		}
+        // ---------------------------------------------------------
+        // 6. Apply simulation configuration
+        // ---------------------------------------------------------
+        TransactionStatus finalStatus =
+                simulationService.determineStatus(
+                        request.getPrn()
+                );
 
-		transaction.setUpdatedAt(LocalDateTime.now());
+        transaction.setStatus(finalStatus);
 
-		transactionRepository.save(transaction);
+        transaction.setUpdatedAt(
+                LocalDateTime.now()
+        );
 
-		PaymentCallback callback =
-		        callbackService.buildCallback(transaction);
+        // ---------------------------------------------------------
+        // 7. SAVE TRANSACTION
+        // ---------------------------------------------------------
+        // This is extremely important for double verification.
+        //
+        // /bank/verification will later search:
+        //
+        // transactionRepository.findByPrn(prn)
+        //
+        // Therefore the transaction MUST already exist here.
+        // ---------------------------------------------------------
 
-		SimulationConfig config =
-		        simulationService.getConfiguration(
-		                request.getPrn()
-		        );
+        transactionRepository.save(transaction);
 
-		callbackBehaviourService.execute(
-		        transaction.getCallbackUrl(),
-		        callback,
-		        config
-		);
+        log.info(
+                "Transaction saved successfully. PRN={}, STATUS={}",
+                transaction.getPrn(),
+                transaction.getStatus()
+        );
 
-		log.info(
-		        "Payment completed. PRN={}, status={}",
-		        transaction.getPrn(),
-		        transaction.getStatus()
-		);
+        // ---------------------------------------------------------
+        // 8. Send callback
+        // ---------------------------------------------------------
+        sendCallback(transaction);
 
-		return buildPaymentResponse(transaction);
-	}
+        // ---------------------------------------------------------
+        // 9. Return payment response
+        // ---------------------------------------------------------
+        log.info(
+                "Payment completed. PRN={}, STATUS={}",
+                transaction.getPrn(),
+                transaction.getStatus()
+        );
 
-	private void validatePaymentRequest(PaymentRequest request) {
+        log.info("========== PAYMENT END ==========");
 
-		if (!"P".equalsIgnoreCase(request.getMd())) {
-			throw new InvalidRequestException("MD must be P for a payment request");
-		}
+        return buildPaymentResponse(transaction);
+    }
 
-		if (transactionRepository.existsByPrn(request.getPrn())) {
-			throw new InvalidRequestException("Transaction already exists for PRN: " + request.getPrn());
-		}
+    /**
+     * Validate basic payment request.
+     */
+    private void validatePaymentRequest(
+            PaymentRequest request) {
 
-		try {
-			BigDecimal amount = new BigDecimal(request.getAmt());
+        if (request == null) {
 
-			if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-				throw new InvalidRequestException("Amount must be greater than zero");
-			}
+            throw new InvalidRequestException(
+                    "Payment request cannot be null"
+            );
+        }
 
-		} catch (NumberFormatException exception) {
-			throw new InvalidRequestException("Amount must be a valid numeric value");
-		}
-	}
+        // MD must be P for payment
+        if (!"P".equalsIgnoreCase(request.getMd())) {
 
-	private Transaction createTransaction(PaymentRequest request) {
+            throw new InvalidRequestException(
+                    "MD must be P for a payment request"
+            );
+        }
 
-		Transaction transaction = new Transaction();
+        // PRN is mandatory
+        if (request.getPrn() == null ||
+                request.getPrn().isBlank()) {
 
-		transaction.setPrn(request.getPrn());
-		transaction.setPayeeId(request.getPid());
-		transaction.setMerchantName(request.getNar());
-		transaction.setAmount(new BigDecimal(request.getAmt()));
-		transaction.setCurrency(request.getCrn());
-		transaction.setAccountNumber(request.getAccno());
-		transaction.setCreatedAt(LocalDateTime.now());
-		transaction.setCallbackUrl(request.getRu());
+            throw new InvalidRequestException(
+                    "PRN is required"
+            );
+        }
 
-		return transaction;
-	}
+        // Prevent duplicate payment creation
+        if (transactionRepository.existsByPrn(
+                request.getPrn())) {
 
-	private PaymentResponse buildPaymentResponse(Transaction transaction) {
+            throw new InvalidRequestException(
+                    "Transaction already exists for PRN: "
+                            + request.getPrn()
+            );
+        }
 
-		PaymentResponse response = new PaymentResponse();
+        // Amount validation
+        if (request.getAmt() == null ||
+                request.getAmt().isBlank()) {
 
-		response.setStatus(mapStatus(transaction.getStatus()));
-		response.setPrn(transaction.getPrn());
-		response.setNar(transaction.getMerchantName());
-		response.setAmt(transaction.getAmount().toPlainString());
-		response.setAccno(transaction.getAccountNumber());
+            throw new InvalidRequestException(
+                    "Amount is required"
+            );
+        }
 
-		return response;
-	}
+        try {
 
-	private String mapStatus(TransactionStatus status) {
+            BigDecimal amount =
+                    new BigDecimal(request.getAmt());
 
-		return switch (status) {
-		case SUCCESS -> "Y";
-		case FAILURE -> "N";
-		case PENDING -> "P";
-		default -> "N";
-		};
-	}
+            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
 
+                throw new InvalidRequestException(
+                        "Amount must be greater than zero"
+                );
+            }
+
+        } catch (NumberFormatException exception) {
+
+            throw new InvalidRequestException(
+                    "Amount must be a valid numeric value"
+            );
+        }
+    }
+
+    /**
+     * Create Transaction entity from PaymentRequest.
+     */
+    private Transaction createTransaction(
+            PaymentRequest request) {
+
+        Transaction transaction =
+                new Transaction();
+
+        transaction.setPrn(
+                request.getPrn()
+        );
+
+        transaction.setPayeeId(
+                request.getPid()
+        );
+
+        transaction.setMerchantName(
+                request.getNar()
+        );
+
+        transaction.setAmount(
+                new BigDecimal(request.getAmt())
+        );
+
+        transaction.setCurrency(
+                request.getCrn()
+        );
+
+        transaction.setAccountNumber(
+                request.getAccno()
+        );
+
+        transaction.setCallbackUrl(
+                request.getRu()
+        );
+
+        transaction.setCreatedAt(
+                LocalDateTime.now()
+        );
+
+        transaction.setUpdatedAt(
+                LocalDateTime.now()
+        );
+
+        return transaction;
+    }
+
+    /**
+     * Send callback according to simulation configuration.
+     */
+    private void sendCallback(
+            Transaction transaction) {
+
+        try {
+
+            PaymentCallback callback =
+                    callbackService.buildCallback(
+                            transaction
+                    );
+
+            SimulationConfig config =
+                    simulationService.getConfiguration(
+                            transaction.getPrn()
+                    );
+
+            callbackBehaviourService.execute(
+                    transaction.getCallbackUrl(),
+                    callback,
+                    config
+            );
+
+        } catch (Exception exception) {
+
+            /*
+             * Callback failure should not destroy the
+             * transaction that has already been saved.
+             */
+            log.error(
+                    "Callback execution failed for PRN={}",
+                    transaction.getPrn(),
+                    exception
+            );
+        }
+    }
+
+    /**
+     * Convert Transaction into PaymentResponse.
+     */
+    private PaymentResponse buildPaymentResponse(
+            Transaction transaction) {
+
+        PaymentResponse response =
+                new PaymentResponse();
+
+        response.setStatus(
+                mapStatus(transaction.getStatus())
+        );
+
+        response.setPrn(
+                transaction.getPrn()
+        );
+
+        response.setNar(
+                transaction.getMerchantName()
+        );
+
+        response.setAmt(
+                transaction.getAmount() != null
+                        ? transaction.getAmount().toPlainString()
+                        : null
+        );
+
+        response.setAccno(
+                transaction.getAccountNumber()
+        );
+
+        return response;
+    }
+
+    /**
+     * Convert internal TransactionStatus
+     * into bank response status.
+     *
+     * Y = Success
+     * N = Failure
+     * P = Pending
+     */
+    private String mapStatus(
+            TransactionStatus status) {
+
+        if (status == null) {
+            return "P";
+        }
+
+        return switch (status) {
+
+            case SUCCESS ->
+                    "Y";
+
+            case FAILURE ->
+                    "N";
+
+            case PENDING ->
+                    "P";
+
+            case VALIDATED,
+                 AUTHENTICATED ->
+                    "P";
+
+            default ->
+                    "P";
+        };
+    }
 }

@@ -1,6 +1,5 @@
 package com.example.bank.simulator1.dto;
 
-
 import jakarta.validation.constraints.NotBlank;
 
 public class VerificationRequest {
@@ -14,7 +13,21 @@ public class VerificationRequest {
     @NotBlank
     private String prn;
 
-    private String checkval;
+    @NotBlank
+    private String amt;
+
+    @NotBlank
+    private String nar;
+
+    private String bid;
+
+    @NotBlank
+    private String crn;
+
+    private String date;
+
+    private String checkVal;
+
     private String data;
 
     public VerificationRequest() {
@@ -44,12 +57,52 @@ public class VerificationRequest {
         this.prn = prn;
     }
 
-    public String getCheckval() {
-        return checkval;
+    public String getAmt() {
+        return amt;
     }
 
-    public void setCheckval(String checkval) {
-        this.checkval = checkval;
+    public void setAmt(String amt) {
+        this.amt = amt;
+    }
+
+    public String getNar() {
+        return nar;
+    }
+
+    public void setNar(String nar) {
+        this.nar = nar;
+    }
+
+    public String getBid() {
+        return bid;
+    }
+
+    public void setBid(String bid) {
+        this.bid = bid;
+    }
+
+    public String getCrn() {
+        return crn;
+    }
+
+    public void setCrn(String crn) {
+        this.crn = crn;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public String getCheckVal() {
+        return checkVal;
+    }
+
+    public void setCheckVal(String checkVal) {
+        this.checkVal = checkVal;
     }
 
     public String getData() {
