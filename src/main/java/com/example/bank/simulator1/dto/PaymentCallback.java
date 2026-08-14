@@ -2,6 +2,7 @@ package com.example.bank.simulator1.dto;
 
 public class PaymentCallback {
 
+	private String pid;
 	private String status;
 	private String prn;
 	private String nar;
@@ -94,5 +95,12 @@ public class PaymentCallback {
 
 	public void setData(String data) {
 		this.data = data;
+	}
+	public String getPid() {
+	    return pid;
+	}
+
+	public void setPid(String pid) {
+	    this.pid = pid;
 	}
 }

@@ -21,8 +21,17 @@ public class PaymentController {
     @PostMapping("/payment")
     public ResponseEntity<PaymentResponse> processPayment(
             @Valid @RequestBody PaymentRequest request) {
+    	
+    	System.out.println("========== PAYMENT CONTROLLER ==========");
+    	System.out.println("RU = " + request.getRu());
+    	System.out.println("========================================");
 
-        PaymentResponse response = paymentService.processPayment(request);
+        PaymentResponse response =
+                paymentService.processPayment(request);
+
+        if (response == null) {
+            return ResponseEntity.noContent().build();
+        }
 
         return ResponseEntity.ok(response);
     }

@@ -151,9 +151,9 @@ function selectScenario(button) {
 
   const labels = {
     NORMAL: "Normal",
-    FORCE_SUCCESS: "Force Success",
-    FORCE_FAILURE: "Force Failure",
-    FORCE_PENDING: "Force Pending",
+    SUCCESS: "Force Success",
+    FAILURE: "Force Failure",
+    PENDING: "Force Pending",
     DELAY: "Delayed Callback",
     DROP: "Drop Callback",
     DUPLICATE: "Duplicate Callback"
@@ -212,67 +212,76 @@ async function processScenario() {
       method: "POST",
       body: JSON.stringify(payment)
     });
+    console.log("PAYMENT RESPONSE FROM BACKEND:", response);
+console.log("PAYMENT STATUS:", response?.status);
 
     transaction.paymentResponse = response;
-    transaction.statusCode = response?.status || "N";
-    saveTransaction(transaction);
+transaction.statusCode = response?.status || null;
 
-    window.location.href = "receipt.html";
+if (window.opener && !window.opener.closed) {
+  window.opener.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(transaction));
+  window.opener.location.href = "receipt.html";
+  window.close();
+} else {
+  saveTransaction(transaction);
+  window.location.href = "receipt.html";
+}
   } catch (error) {
     showError("scenarioError", error.message);
     setLoading(button, false);
   }
 }
 
-async function processScenario() {
-  const transaction = getTransaction();
-
-  if (!transaction) {
-    window.close();
-    return;
-  }
-
-  const selected =
-    document.querySelector(".scenario.selected");
-
-  const mode =
-    selected?.dataset.mode || "NORMAL";
-
-  transaction.scenario = mode;
-
-  saveTransaction(transaction);
-
-  let status = "SUCCESS";
-
-  if (mode === "FORCE_FAILURE") {
-    status = "FAILED";
-  } else if (mode === "FORCE_PENDING") {
-    status = "PENDING";
-  }
-
-  const response = {
-    scenario: mode,
-    status,
-    prn: transaction.prn,
-    amount: transaction.amount,
-    merchant: transaction.merchantName
-  };
-
-  if (window.opener) {
-    window.opener.postMessage(
-      response,
-      window.location.origin
-    );
-  }
-
-  window.close();
-}
-
 function goBack() {
   window.history.back();
 }
 
-function statusInfo(code) {
+function finishTransaction() {
+  if (window.opener && !window.opener.closed) {
+    window.opener.location.href = "index.html";
+    window.close();
+  } else {
+    window.location.href = "index.html";
+  }
+}
+
+// function statusInfo(code) {
+//   switch (code) {
+//     case "Y":
+//       return {
+//         label: "SUCCESS",
+//         title: "Payment Successful",
+//         message: "The bank has accepted the transaction.",
+//         className: "success"
+//       };
+//     case "P":
+//       return {
+//         label: "PENDING",
+//         title: "Payment Pending",
+//         message: "The bank has received the transaction and marked it pending.",
+//         className: "pending"
+//       };
+//     default:
+//       return {
+//         label: "FAILED",
+//         title: "Payment Failed",
+//         message: "The bank simulator returned a failed transaction.",
+//         className: "failure"
+//       };
+//   }
+// }
+
+function statusInfo(code, scenario) {
+
+  if (scenario === "DROP") {
+    return {
+      label: "CALLBACK NOT RECEIVED",
+      title: "Callback Not Received",
+      message: "The bank processed the transaction, but no callback was received.",
+      className: "pending"
+    };
+  }
+
   switch (code) {
     case "Y":
       return {
@@ -281,6 +290,7 @@ function statusInfo(code) {
         message: "The bank has accepted the transaction.",
         className: "success"
       };
+
     case "P":
       return {
         label: "PENDING",
@@ -288,16 +298,24 @@ function statusInfo(code) {
         message: "The bank has received the transaction and marked it pending.",
         className: "pending"
       };
-    default:
+
+    case "N":
       return {
         label: "FAILED",
         title: "Payment Failed",
         message: "The bank simulator returned a failed transaction.",
         className: "failure"
       };
+
+    default:
+      return {
+        label: "UNKNOWN",
+        title: "Transaction Status Unknown",
+        message: "The transaction status could not be confirmed.",
+        className: "pending"
+      };
   }
 }
-
 function scenarioLabel(mode) {
   return {
     NORMAL: "Normal",
@@ -320,15 +338,64 @@ function hydrateCheckout() {
 }
 
 function hydrateScenario() {
-  const tx = getTransaction();
+  let tx = getTransaction();
+
+  // Read callback data sent by the gateway
+  const encodedData = new URLSearchParams(window.location.search).get("data");
+
+  if (encodedData) {
+    try {
+      const callback = JSON.parse(encodedData);
+
+      console.log("CALLBACK RECEIVED BY FRONTEND:", callback);
+
+      // Create/update transaction from gateway callback
+      tx = {
+        ...(tx || {}),
+        prn: callback.prn,
+        merchantName: callback.nar || "AudioHub Retail",
+        amount: callback.amt || "0.00",
+        currency: "INR",
+        payeeId: callback.pid || "DEMO-MERCHANT",
+        paymentMethod: "Net Banking",
+        bank: "DBS Corporate Bank",
+        scenario: "SUCCESS",
+        delayMs: 0,
+        paymentResponse: callback,
+        statusCode: callback.status
+      };
+
+      saveTransaction(tx);
+
+      // Remove callback data from URL after saving it
+      window.history.replaceState(
+        {},
+        document.title,
+        "scenario.html"
+      );
+
+    } catch (error) {
+      console.error("FAILED TO READ CALLBACK DATA:", error);
+    }
+  }
+
   if (!tx) {
+    console.log("NO TRANSACTION");
     window.location.href = "index.html";
     return;
   }
 
-  if ($("prn")) $("prn").textContent = tx.prn;
-  const button = document.querySelector(`.scenario[data-mode="${tx.scenario || "NORMAL"}"]`);
-  if (button) selectScenario(button);
+  if ($("prn")) {
+    $("prn").textContent = tx.prn;
+  }
+
+  const button = document.querySelector(
+    `.scenario[data-mode="${tx.scenario || "NORMAL"}"]`
+  );
+
+  if (button) {
+    selectScenario(button);
+  }
 }
 
 function hydrateResult() {
@@ -338,7 +405,10 @@ function hydrateResult() {
     return;
   }
 
-  const info = statusInfo(tx.paymentResponse?.status || tx.statusCode);
+  const info = statusInfo(
+  tx.paymentResponse?.status || tx.statusCode,
+  tx.scenario
+);
   const response = tx.paymentResponse || {};
 
   if ($("resultIcon")) {
@@ -365,7 +435,11 @@ function hydrateReceipt() {
   }
 
   const payment = tx.paymentResponse || {};
-  const info = statusInfo(payment.status || tx.statusCode);
+  // const info = statusInfo(payment.status || tx.statusCode);
+  const info = statusInfo(
+  payment.status || tx.statusCode,
+  tx.scenario
+);
 
   if ($("receiptIcon")) {
     $("receiptIcon").textContent =
@@ -387,84 +461,11 @@ function hydrateReceipt() {
 
   if ($("receiptStatus")) $("receiptStatus").textContent = info.label;
   if ($("receiptPrn")) $("receiptPrn").textContent = tx.prn;
-  if ($("receiptScenario")) $("receiptScenario").textContent = tx.scenario || "NORMAL";
+  if ($("receiptScenario")) $("receiptScenario").textContent = scenarioLabel(tx.scenario);
+  if ($("receiptMerchant")) $("receiptMerchant").textContent = tx.merchantName || "—";
+  if ($("receiptBank")) $("receiptBank").textContent = tx.bank || "DBS Corporate Bank";
+  if ($("receiptMethod")) $("receiptMethod").textContent = tx.paymentMethod || "Net Banking";
 }
-
-
-window.addEventListener("message", (event) => {
-
-  const data = event.data;
-
-  if (!data || !data.scenario) {
-    return;
-  }
-
-  document.body.innerHTML = `
-    <main class="container narrow">
-
-      <section class="receipt">
-
-        <div class="receipt-logo">
-          BillDesk
-        </div>
-
-        <div class="result-icon ${
-          data.status === "SUCCESS"
-            ? "success"
-            : data.status === "PENDING"
-            ? "pending"
-            : "failure"
-        }">
-
-          ${
-            data.status === "SUCCESS"
-              ? "✓"
-              : data.status === "PENDING"
-              ? "…"
-              : "×"
-          }
-
-        </div>
-
-        <h1>
-          Transaction ${data.status}
-        </h1>
-
-        <div class="receipt-amount">
-          ${rupees(data.amount)}
-        </div>
-
-        <div class="receipt-details">
-
-          <div>
-            <span>PRN</span>
-            <strong>${data.prn}</strong>
-          </div>
-
-          <div>
-            <span>Scenario</span>
-            <strong>${data.scenario}</strong>
-          </div>
-
-          <div>
-            <span>Status</span>
-            <strong>${data.status}</strong>
-          </div>
-
-        </div>
-
-        <button
-          class="primary full"
-          onclick="location.href='index.html'">
-          New Transaction
-        </button>
-
-      </section>
-
-    </main>
-  `;
-});
-
 
 document.addEventListener("DOMContentLoaded", () => {
   const page = location.pathname.split("/").pop();

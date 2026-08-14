@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Payment Result | BillDesk Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -20,21 +22,23 @@
     </div>
 
     <section class="panel result-panel">
-      <div id="resultIcon" class="result-icon">✓</div>
-      <p class="eyebrow" id="resultEyebrow">Bank response</p>
-      <h1 id="resultTitle">Payment Successful</h1>
-      <p class="muted" id="resultMessage">The bank has accepted the transaction.</p>
+      <div class="panel-body">
+        <div id="resultIcon" class="result-icon">✓</div>
+        <p class="eyebrow" id="resultEyebrow" style="color:var(--blue);text-transform:uppercase;font-size:11px;font-weight:800;letter-spacing:.1em;">Bank response</p>
+        <h1 id="resultTitle" style="margin:0 0 6px;font-size:22px;">Payment Successful</h1>
+        <p class="muted" id="resultMessage" style="color:var(--muted);">The bank has accepted the transaction.</p>
 
-      <div class="result-box">
-        <div><span>Status</span><strong id="resultStatus">SUCCESS</strong></div>
-        <div><span>PRN</span><strong id="resultPrn">—</strong></div>
-        <div><span>Amount</span><strong id="resultAmount">₹0.00</strong></div>
-        <div><span>Bank</span><strong>DBS Corporate Bank</strong></div>
-        <div><span>Scenario</span><strong id="resultScenario">Normal</strong></div>
+        <div class="result-box">
+          <div><span>Status</span><strong id="resultStatus">SUCCESS</strong></div>
+          <div><span>PRN</span><strong id="resultPrn">—</strong></div>
+          <div><span>Amount</span><strong id="resultAmount">₹0.00</strong></div>
+          <div><span>Bank</span><strong>DBS Corporate Bank</strong></div>
+          <div><span>Scenario</span><strong id="resultScenario">Normal</strong></div>
+        </div>
+
+        <button class="primary full" onclick="processTransaction()">Process Transaction</button>
+        <button class="text-button" onclick="window.location.href='index.html'">Start new transaction</button>
       </div>
-
-      <button class="primary full" onclick="processTransaction()">Process Transaction</button>
-      <button class="text-button" onclick="window.location.href='index.html'">Start New Transaction</button>
     </section>
   </main>
 

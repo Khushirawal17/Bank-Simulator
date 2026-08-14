@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bank Simulation | BillDesk Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -20,65 +22,68 @@
     </div>
 
     <section class="panel">
-      <p class="eyebrow">Simulation</p>
-      <h1>Select transaction scenario</h1>
-      <p class="muted">Choose how the bank simulator should respond to this transaction.</p>
+      <div class="panel-body">
+        <p class="eyebrow" style="color:var(--blue);text-transform:uppercase;font-size:11px;font-weight:800;letter-spacing:.1em;margin:0 0 8px;">Simulation</p>
+        <h1 style="margin:0 0 6px;font-size:22px;">Select transaction scenario</h1>
+        <p class="muted" style="color:var(--muted);">Choose how the bank simulator should respond to this transaction.</p>
 
-      <div class="scenario-grid">
-        <button class="scenario selected" data-mode="NORMAL" onclick="selectScenario(this)">
-          <span class="scenario-icon success">✓</span>
-          <span><strong>Normal</strong><small>Process as a successful transaction</small></span>
-        </button>
+        <div class="scenario-grid">
+          <button class="scenario selected" data-mode="SUCCESS" onclick="selectScenario(this)">
+            <span class="scenario-icon success">✓</span>
+            <span><strong>Success</strong><small>Always return success</small></span>
+          </button>
 
-        <button class="scenario" data-mode="FORCE_SUCCESS" onclick="selectScenario(this)">
-          <span class="scenario-icon success">✓</span>
-          <span><strong>Force Success</strong><small>Always return success</small></span>
-        </button>
+          <button class="scenario" data-mode="FAILURE" onclick="selectScenario(this)">
+            <span class="scenario-icon failure">×</span>
+            <span><strong>Failure</strong><small>Return a failed transaction</small></span>
+          </button>
 
-        <button class="scenario" data-mode="FORCE_FAILURE" onclick="selectScenario(this)">
-          <span class="scenario-icon failure">×</span>
-          <span><strong>Force Failure</strong><small>Return a failed transaction</small></span>
-        </button>
+          <button class="scenario" data-mode="PENDING" onclick="selectScenario(this)">
+            <span class="scenario-icon pending">…</span>
+            <span><strong>Pending</strong><small>Return a pending transaction</small></span>
+          </button>
 
-        <button class="scenario" data-mode="FORCE_PENDING" onclick="selectScenario(this)">
-          <span class="scenario-icon pending">…</span>
-          <span><strong>Force Pending</strong><small>Return a pending transaction</small></span>
-        </button>
+          <button class="scenario" data-mode="DELAY" onclick="selectScenario(this)">
+            <span class="scenario-icon delay">◷</span>
+            <span><strong>Delayed Callback</strong><small>Delay the bank callback</small></span>
+          </button>
 
-        <button class="scenario" data-mode="DELAY" onclick="selectScenario(this)">
-          <span class="scenario-icon delay">◷</span>
-          <span><strong>Delayed Callback</strong><small>Delay the bank callback</small></span>
-        </button>
+          <button class="scenario" data-mode="DROP" onclick="selectScenario(this)">
+            <span class="scenario-icon delay">↓</span>
+            <span><strong>Drop Callback</strong><small>Do not send the callback</small></span>
+          </button>
 
-        <button class="scenario" data-mode="DROP" onclick="selectScenario(this)">
-          <span class="scenario-icon delay">↓</span>
-          <span><strong>Drop Callback</strong><small>Do not send the callback</small></span>
-        </button>
+          <button class="scenario" data-mode="DUPLICATE" onclick="selectScenario(this)">
+            <span class="scenario-icon delay">↻</span>
+            <span><strong>Duplicate Callback</strong><small>Send the callback twice</small></span>
+          </button>
+        </div>
 
-        <button class="scenario" data-mode="DUPLICATE" onclick="selectScenario(this)">
-          <span class="scenario-icon delay">↻</span>
-          <span><strong>Duplicate Callback</strong><small>Send the callback twice</small></span>
-        </button>
+        <div id="delayBox" class="field hidden">
+          <label for="delayMs">Callback delay (milliseconds)</label>
+          <input id="delayMs" type="number" min="0" max="30000" value="3000">
+        </div>
+
+        <div class="transaction-mini">
+          <span>Transaction</span>
+          <strong id="prn">—</strong>
+          <span id="scenarioLabel">Success</span>
+        </div>
+
+        <button id="continueBtn" class="primary full" onclick="processScenario()">Get result</button>
+        <button class="text-button" onclick="goBack()">← Back</button>
+        <div id="scenarioError" class="error hidden"></div>
       </div>
-
-      <div id="delayBox" class="field hidden">
-        <label for="delayMs">Callback delay (milliseconds)</label>
-        <input id="delayMs" type="number" min="0" max="30000" value="3000">
-      </div>
-
-      <div class="transaction-mini">
-        <span>Transaction</span>
-        <strong id="prn">—</strong>
-        <span id="scenarioLabel">Normal</span>
-      </div>
-
-      <button id="continueBtn" class="primary full" onclick="processScenario()">Get Result</button>
-      <button class="text-button" onclick="goBack()">← Back</button>
-      <div id="scenarioError" class="error hidden"></div>
     </section>
   </main>
 
-  <script src="config.js"></script>
-  <script src="app.js"></script>
+  <script>
+console.log("SCENARIO.HTML LOADED");
+console.log("CURRENT URL:", window.location.href);
+console.log("QUERY DATA:", new URLSearchParams(window.location.search).get("data"));
+</script>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

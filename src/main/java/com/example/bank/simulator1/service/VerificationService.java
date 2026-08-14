@@ -15,313 +15,248 @@ import com.example.bank.simulator1.state.TransactionStatus;
 @Service
 public class VerificationService {
 
-    private final TransactionRepository transactionRepository;
-    private final ChecksumService checksumService;
-
-    public VerificationService(
-            TransactionRepository transactionRepository,
-            ChecksumService checksumService) {
-
-        this.transactionRepository = transactionRepository;
-        this.checksumService = checksumService;
-    }
-
-    public VerificationResponse verify(
-            VerificationRequest request) {
-
-        System.out.println(
-                "========== DOUBLE VERIFICATION START =========="
-        );
-
-        validateRequest(request);
-
-        // -------------------------------------------------
-        // STEP 1: Validate verification checksum
-        // -------------------------------------------------
-
-        if (request.getCheckVal() == null ||
-                request.getCheckVal().isBlank()) {
-
-            throw new InvalidChecksumException(
-                    "Verification checksum is required"
-            );
-        }
-
-        boolean checksumValid =
-                checksumService.validateVerificationRequest(
-                        request
-                );
+	private final TransactionRepository transactionRepository;
+	private final ChecksumService checksumService;
 
-        if (!checksumValid) {
+	public VerificationService(TransactionRepository transactionRepository, ChecksumService checksumService) {
 
-            throw new InvalidChecksumException(
-                    "Invalid verification checksum"
-            );
-        }
-
-        System.out.println(
-                "Verification checksum validated successfully."
-        );
-
-        // -------------------------------------------------
-        // STEP 2: Find original payment transaction
-        // -------------------------------------------------
-
-        Transaction transaction =
-                transactionRepository
-                        .findByPrn(request.getPrn())
-                        .orElseThrow(() ->
-                                new TransactionNotFoundException(
-                                        "Transaction not found for PRN: "
-                                                + request.getPrn()
-                                )
-                        );
-
-        System.out.println(
-                "Original transaction found. PRN="
-                        + transaction.getPrn()
-        );
-
-        // -------------------------------------------------
-        // STEP 3: Compare verification data
-        // -------------------------------------------------
+		this.transactionRepository = transactionRepository;
+		this.checksumService = checksumService;
+	}
 
-        boolean matches =
-                matchesTransaction(
-                        request,
-                        transaction
-                );
+	public VerificationResponse verify(VerificationRequest request) {
 
-        if (!matches) {
-
-            VerificationResponse response =
-                    new VerificationResponse();
+		System.out.println();
+		System.out.println("==========================================");
+		System.out.println("       DOUBLE VERIFICATION START");
+		System.out.println("==========================================");
 
-            response.setStatus("N");
-            response.setPrn(transaction.getPrn());
+		validateRequest(request);
 
-            if (transaction.getAmount() != null) {
+		boolean checksumValid = checksumService.validateVerificationRequest(request);
 
-                response.setAmount(
-                        transaction
-                                .getAmount()
-                                .toPlainString()
-                );
-            }
+		if (!checksumValid) {
 
-            response.setMessage(
-                    "Verification details do not match payment transaction"
-            );
+			System.out.println("❌ Verification checksum validation FAILED");
 
-            System.out.println(
-                    "DOUBLE VERIFICATION FAILED. PRN="
-                            + transaction.getPrn()
-            );
+			throw new InvalidChecksumException("Invalid verification checksum");
+		}
 
-            System.out.println(
-                    "========== DOUBLE VERIFICATION END =========="
-            );
+		System.out.println("✅ Verification checksum validated successfully.");
 
-            return response;
-        }
+		Transaction transaction = transactionRepository.findByPrn(request.getPrn()).orElseThrow(
+				() -> new TransactionNotFoundException("Transaction not found for PRN: " + request.getPrn()));
 
-        // -------------------------------------------------
-        // STEP 4: Return transaction status
-        // -------------------------------------------------
+		System.out.println();
+		System.out.println("Original transaction found.");
+		System.out.println("PRN = " + transaction.getPrn());
 
-        VerificationResponse response =
-                buildResponse(transaction);
+		boolean matches = matchesTransaction(request, transaction);
 
-        System.out.println(
-                "DOUBLE VERIFICATION SUCCESSFUL. PRN="
-                        + transaction.getPrn()
-        );
+		if (!matches) {
 
-        System.out.println(
-                "========== DOUBLE VERIFICATION END =========="
-        );
+			VerificationResponse response = new VerificationResponse();
 
-        return response;
-    }
+			response.setStatus("N");
+			response.setPrn(transaction.getPrn());
 
-    // =====================================================
-    // REQUEST VALIDATION
-    // =====================================================
+			if (transaction.getAmount() != null) {
 
-    private void validateRequest(
-            VerificationRequest request) {
+				response.setAmount(transaction.getAmount().toPlainString());
+			}
 
-        if (!"V".equalsIgnoreCase(request.getMd())) {
+			response.setMessage("Verification details do not match payment transaction");
 
-            throw new InvalidRequestException(
-                    "MD must be V for a verification request"
-            );
-        }
-    }
+			System.out.println();
+			System.out.println("❌ DOUBLE VERIFICATION FAILED");
 
-    // =====================================================
-    // TRANSACTION COMPARISON
-    // =====================================================
+			System.out.println("==========================================");
 
-    private boolean matchesTransaction(
-            VerificationRequest request,
-            Transaction transaction) {
+			return response;
+		}
 
-        // PID
-        if (!safeEquals(
-                request.getPid(),
-                transaction.getPayeeId())) {
+		VerificationResponse response = buildResponse(transaction);
 
-            return false;
-        }
+		System.out.println();
+		System.out.println("✅ DOUBLE VERIFICATION SUCCESSFUL");
 
-        // Amount
-        if (transaction.getAmount() == null ||
-                request.getAmt() == null) {
+		System.out.println("Verification Status = " + response.getStatus());
 
-            return false;
-        }
+		System.out.println("Verification Message = " + response.getMessage());
 
-        try {
+		System.out.println("==========================================");
 
-            if (transaction.getAmount()
-                    .compareTo(
-                            new java.math.BigDecimal(
-                                    request.getAmt()
-                            )
-                    ) != 0) {
+		return response;
+	}
 
-                return false;
-            }
+	private void validateRequest(VerificationRequest request) {
 
-        } catch (NumberFormatException exception) {
+		if (request == null) {
 
-            return false;
-        }
+			throw new InvalidRequestException("Verification request cannot be null");
+		}
 
-        // Narration
-        if (!safeEquals(
-                request.getNar(),
-                transaction.getMerchantName())) {
+		if (!"V".equalsIgnoreCase(request.getMd())) {
 
-            return false;
-        }
+			throw new InvalidRequestException("MD must be V for a verification request");
+		}
+	}
 
-        // Currency
-        if (!safeEquals(
-                request.getCrn(),
-                transaction.getCurrency())) {
+	private boolean matchesTransaction(VerificationRequest request, Transaction transaction) {
 
-            return false;
-        }
+		System.out.println();
+		System.out.println("========== VERIFICATION COMPARISON ==========");
 
-        return true;
-    }
+		System.out.println("PID:");
+		System.out.println("Request     = " + request.getPid());
+		System.out.println("Transaction = " + transaction.getPayeeId());
 
-    // =====================================================
-    // BUILD SUCCESS RESPONSE
-    // =====================================================
+		if (!safeEquals(request.getPid(), transaction.getPayeeId())) {
 
-    private VerificationResponse buildResponse(
-            Transaction transaction) {
+			System.out.println("❌ PID MISMATCH");
 
-        VerificationResponse response =
-                new VerificationResponse();
+			return false;
+		}
 
-        response.setStatus(
-                mapStatus(
-                        transaction.getStatus()
-                )
-        );
+		System.out.println("✅ PID MATCH");
 
-        response.setPrn(
-                transaction.getPrn()
-        );
+		System.out.println();
+		System.out.println("Amount:");
 
-        if (transaction.getAmount() != null) {
+		System.out.println("Request     = " + request.getAmt());
 
-            response.setAmount(
-                    transaction
-                            .getAmount()
-                            .toPlainString()
-            );
-        }
+		System.out.println("Transaction = " + transaction.getAmount());
 
-        response.setMessage(
-                getStatusMessage(
-                        transaction.getStatus()
-                )
-        );
+		if (transaction.getAmount() == null || request.getAmt() == null) {
 
-        return response;
-    }
+			System.out.println("❌ AMOUNT IS NULL");
 
-    // =====================================================
-    // STATUS MAPPING
-    // =====================================================
+			return false;
+		}
 
-    private String mapStatus(
-            TransactionStatus status) {
+		try {
 
-        if (status == null) {
-            return "P";
-        }
+			if (transaction.getAmount().compareTo(new java.math.BigDecimal(request.getAmt())) != 0) {
 
-        return switch (status) {
+				System.out.println("❌ AMOUNT MISMATCH");
 
-            case SUCCESS -> "Y";
+				return false;
+			}
 
-            case FAILURE -> "N";
+		} catch (NumberFormatException exception) {
 
-            case PENDING -> "P";
+			System.out.println("❌ INVALID AMOUNT");
 
-            default -> "P";
-        };
-    }
+			return false;
+		}
 
-    // =====================================================
-    // STATUS MESSAGE
-    // =====================================================
+		System.out.println("✅ AMOUNT MATCH");
 
-    private String getStatusMessage(
-            TransactionStatus status) {
+		System.out.println();
+		System.out.println("Narration:");
 
-        if (status == null) {
-            return "Transaction is being processed";
-        }
+		System.out.println("Request     = " + request.getNar());
 
-        return switch (status) {
+		System.out.println("Transaction = " + transaction.getMerchantName());
 
-            case SUCCESS ->
-                    "Transaction successful";
+		if (!safeEquals(request.getNar(), transaction.getMerchantName())) {
 
-            case FAILURE ->
-                    "Transaction failed";
+			System.out.println("❌ NARRATION MISMATCH");
 
-            case PENDING ->
-                    "Transaction pending";
+			return false;
+		}
 
-            default ->
-                    "Transaction is being processed";
-        };
-    }
+		System.out.println("✅ NARRATION MATCH");
 
-    // =====================================================
-    // SAFE STRING COMPARISON
-    // =====================================================
+		System.out.println();
+		System.out.println("Currency:");
 
-    private boolean safeEquals(
-            String first,
-            String second) {
+		System.out.println("Request     = " + request.getCrn());
 
-        if (first == null && second == null) {
-            return true;
-        }
+		System.out.println("Transaction = " + transaction.getCurrency());
 
-        if (first == null || second == null) {
-            return false;
-        }
+		if (!safeEquals(request.getCrn(), transaction.getCurrency())) {
 
-        return first.equals(second);
-    }
+			System.out.println("❌ CURRENCY MISMATCH");
+
+			return false;
+		}
+
+		System.out.println("✅ CURRENCY MATCH");
+
+		System.out.println();
+		System.out.println("✅ ALL VERIFICATION VALUES MATCH");
+
+		System.out.println("=============================================");
+
+		return true;
+	}
+
+	private VerificationResponse buildResponse(Transaction transaction) {
+
+		VerificationResponse response = new VerificationResponse();
+
+		response.setStatus(mapStatus(transaction.getStatus()));
+
+		response.setPrn(transaction.getPrn());
+
+		if (transaction.getAmount() != null) {
+
+			response.setAmount(transaction.getAmount().toPlainString());
+		}
+
+		response.setMessage(getStatusMessage(transaction.getStatus()));
+
+		return response;
+	}
+
+	private String mapStatus(TransactionStatus status) {
+
+		if (status == null) {
+			return "P";
+		}
+
+		return switch (status) {
+
+		case SUCCESS -> "Y";
+
+		case FAILURE -> "N";
+
+		case PENDING -> "P";
+
+		default -> "P";
+		};
+	}
+
+	private String getStatusMessage(TransactionStatus status) {
+
+		if (status == null) {
+
+			return "Transaction is being processed";
+		}
+
+		return switch (status) {
+
+		case SUCCESS -> "Transaction successful";
+
+		case FAILURE -> "Transaction failed";
+
+		case PENDING -> "Transaction pending";
+
+		default -> "Transaction is being processed";
+		};
+	}
+
+	private boolean safeEquals(String first, String second) {
+
+		if (first == null && second == null) {
+			return true;
+		}
+
+		if (first == null || second == null) {
+			return false;
+		}
+
+		return first.equals(second);
+	}
 }

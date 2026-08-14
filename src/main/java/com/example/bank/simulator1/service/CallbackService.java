@@ -28,6 +28,8 @@ public class CallbackService {
 		callback.setStatus(mapStatus(transaction.getStatus()));
 
 		callback.setPrn(transaction.getPrn());
+		
+		callback.setPid(transaction.getPayeeId());
 
 		callback.setNar(transaction.getMerchantName());
 

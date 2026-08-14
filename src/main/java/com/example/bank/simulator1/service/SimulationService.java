@@ -66,8 +66,11 @@ public class SimulationService {
             case PENDING ->
                 TransactionStatus.PENDING;
 
-            case DELAY, DROP, DUPLICATE ->
+            case DELAY, DUPLICATE ->
                 TransactionStatus.SUCCESS;
+                
+            case DROP ->
+            TransactionStatus.PENDING;
         };
     }
 }

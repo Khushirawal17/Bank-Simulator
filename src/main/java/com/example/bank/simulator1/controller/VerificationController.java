@@ -10,21 +10,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.bank.simulator1.dto.VerificationRequest;
 import com.example.bank.simulator1.dto.VerificationResponse;
-import com.example.bank.simulator1.service.DoubleVerificationService;
+import com.example.bank.simulator1.service.VerificationService;
 
 @RestController
 @RequestMapping("/bank")
 public class VerificationController {
 
-    private final DoubleVerificationService
-            doubleVerificationService;
+    private final VerificationService verificationService;
 
     public VerificationController(
-            DoubleVerificationService
-                    doubleVerificationService) {
+            VerificationService verificationService) {
 
-        this.doubleVerificationService =
-                doubleVerificationService;
+        this.verificationService = verificationService;
     }
 
     @PostMapping("/verification")
@@ -34,7 +31,7 @@ public class VerificationController {
             VerificationRequest request) {
 
         VerificationResponse response =
-                doubleVerificationService.verify(request);
+                verificationService.verify(request);
 
         return ResponseEntity.ok(response);
     }

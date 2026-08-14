@@ -17,6 +17,7 @@ import com.example.bank.simulator1.model.Transaction;
 import com.example.bank.simulator1.repository.TransactionRepository;
 import com.example.bank.simulator1.security.ChecksumService;
 import com.example.bank.simulator1.state.PaymentMode;
+import com.example.bank.simulator1.state.SimulationMode;
 import com.example.bank.simulator1.state.TransactionStatus;
 
 @Service
@@ -65,14 +66,10 @@ public class PaymentService {
        log.info("========== PAYMENT START ==========");
        log.info("Processing payment for PRN={}", request.getPrn());
 
-        // ---------------------------------------------------------
-        // 1. Validate payment request
-        // ---------------------------------------------------------
+        
         validatePaymentRequest(request);
 
-        // ---------------------------------------------------------
-        // 2. Validate checksum
-        // ---------------------------------------------------------
+        
         String generatedChecksum =
                 checksumService.generatePaymentChecksum(request);
 
@@ -101,9 +98,6 @@ public class PaymentService {
                 request.getPrn()
         );
 
-        // ---------------------------------------------------------
-        // 3. Create transaction
-        // ---------------------------------------------------------
         Transaction transaction =
                 createTransaction(request);
 
@@ -115,9 +109,7 @@ public class PaymentService {
                 LocalDateTime.now()
         );
 
-        // ---------------------------------------------------------
-        // 4. Authenticate payment
-        // ---------------------------------------------------------
+        
         boolean authenticated =
                 authenticationService.authenticate(request);
 
@@ -150,9 +142,6 @@ public class PaymentService {
             return buildPaymentResponse(transaction);
         }
 
-        // ---------------------------------------------------------
-        // 5. Authentication successful
-        // ---------------------------------------------------------
         transaction.setStatus(
                 TransactionStatus.AUTHENTICATED
         );
@@ -161,9 +150,12 @@ public class PaymentService {
                 PaymentMode.REAL_TIME
         );
 
-        // ---------------------------------------------------------
-        // 6. Apply simulation configuration
-        // ---------------------------------------------------------
+        
+        SimulationConfig config =
+                simulationService.getConfiguration(
+                        request.getPrn()
+                );
+        
         TransactionStatus finalStatus =
                 simulationService.determineStatus(
                         request.getPrn()
@@ -175,19 +167,19 @@ public class PaymentService {
                 LocalDateTime.now()
         );
 
-        // ---------------------------------------------------------
-        // 7. SAVE TRANSACTION
-        // ---------------------------------------------------------
-        // This is extremely important for double verification.
-        //
-        // /bank/verification will later search:
-        //
-        // transactionRepository.findByPrn(prn)
-        //
-        // Therefore the transaction MUST already exist here.
-        // ---------------------------------------------------------
 
         transactionRepository.save(transaction);
+        if (config != null &&
+                config.getSimulationMode() == SimulationMode.DROP) {
+
+            log.info(
+                    "PRN={} | DROP scenario | Callback will not be sent",
+                    request.getPrn()
+            );
+
+            return null;
+        }
+
 
         log.info(
                 "Transaction saved successfully. PRN={}, STATUS={}",
@@ -195,14 +187,9 @@ public class PaymentService {
                 transaction.getStatus()
         );
 
-        // ---------------------------------------------------------
-        // 8. Send callback
-        // ---------------------------------------------------------
         sendCallback(transaction);
 
-        // ---------------------------------------------------------
-        // 9. Return payment response
-        // ---------------------------------------------------------
+        
         log.info(
                 "Payment completed. PRN={}, STATUS={}",
                 transaction.getPrn(),
@@ -214,9 +201,7 @@ public class PaymentService {
         return buildPaymentResponse(transaction);
     }
 
-    /**
-     * Validate basic payment request.
-     */
+    
     private void validatePaymentRequest(
             PaymentRequest request) {
 
@@ -283,9 +268,7 @@ public class PaymentService {
         }
     }
 
-    /**
-     * Create Transaction entity from PaymentRequest.
-     */
+   
     private Transaction createTransaction(
             PaymentRequest request) {
 
@@ -331,9 +314,7 @@ public class PaymentService {
         return transaction;
     }
 
-    /**
-     * Send callback according to simulation configuration.
-     */
+    
     private void sendCallback(
             Transaction transaction) {
 
@@ -349,6 +330,13 @@ public class PaymentService {
                             transaction.getPrn()
                     );
 
+            log.info("========================================");
+            log.info("CALLING CALLBACK BEHAVIOR SERVICE");
+            log.info("PRN        : {}", transaction.getPrn());
+            log.info("CALLBACK URL: {}", transaction.getCallbackUrl());
+            log.info("CONFIG     : {}", config);
+            log.info("========================================");
+
             callbackBehaviourService.execute(
                     transaction.getCallbackUrl(),
                     callback,
@@ -357,10 +345,6 @@ public class PaymentService {
 
         } catch (Exception exception) {
 
-            /*
-             * Callback failure should not destroy the
-             * transaction that has already been saved.
-             */
             log.error(
                     "Callback execution failed for PRN={}",
                     transaction.getPrn(),
@@ -369,9 +353,7 @@ public class PaymentService {
         }
     }
 
-    /**
-     * Convert Transaction into PaymentResponse.
-     */
+    
     private PaymentResponse buildPaymentResponse(
             Transaction transaction) {
 
@@ -403,14 +385,7 @@ public class PaymentService {
         return response;
     }
 
-    /**
-     * Convert internal TransactionStatus
-     * into bank response status.
-     *
-     * Y = Success
-     * N = Failure
-     * P = Pending
-     */
+    
     private String mapStatus(
             TransactionStatus status) {
 

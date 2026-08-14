@@ -6,7 +6,7 @@ public class PaymentRequest {
 
 	@NotBlank
 	private String md;
-	
+
 	@NotBlank
 	private String pid;
 
@@ -123,8 +123,5 @@ public class PaymentRequest {
 	public void setData(String data) {
 		this.data = data;
 	}
-	
-	
-	
 
 }

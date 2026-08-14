@@ -1,305 +1,108 @@
 package com.example.bank.simulator1.service;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
 import org.springframework.stereotype.Service;
 
+import com.example.bank.simulator1.dto.PaymentCallback;
 import com.example.bank.simulator1.dto.VerificationRequest;
 import com.example.bank.simulator1.dto.VerificationResponse;
-import com.example.bank.simulator1.exception.InvalidRequestException;
-import com.example.bank.simulator1.exception.TransactionNotFoundException;
-import com.example.bank.simulator1.model.Transaction;
-import com.example.bank.simulator1.repository.TransactionRepository;
-import com.example.bank.simulator1.state.TransactionStatus;
-import com.example.bank.simulator1.state.VerificationStatus;
+import com.example.bank.simulator1.security.ChecksumService;
 
 @Service
 public class DoubleVerificationService {
 
-    private final TransactionRepository transactionRepository;
+    private final VerificationService verificationService;
+    private final ChecksumService checksumService;
 
     public DoubleVerificationService(
-            TransactionRepository transactionRepository) {
+            VerificationService verificationService,
+            ChecksumService checksumService) {
 
-        this.transactionRepository =
-                transactionRepository;
+        this.verificationService = verificationService;
+        this.checksumService = checksumService;
     }
 
-    public VerificationResponse verify(
-            VerificationRequest request) {
+    public VerificationResponse verifyCallback(
+            PaymentCallback callback) {
 
-        validateRequest(request);
+        System.out.println();
+        System.out.println("==========================================");
+        System.out.println("       DOUBLE VERIFICATION START");
+        System.out.println("==========================================");
 
-        Transaction transaction =
-                transactionRepository
-                        .findByPrn(request.getPrn())
-                        .orElseThrow(() ->
-                                new TransactionNotFoundException(
-                                        "Transaction not found for PRN: "
-                                                + request.getPrn()
-                                )
-                        );
+        System.out.println("PRN       : " + callback.getPrn());
+        System.out.println("Status    : " + callback.getStatus());
+        System.out.println("Amount    : " + callback.getAmt());
+        System.out.println("Narration : " + callback.getNar());
 
-        boolean detailsMatch =
-                validateTransactionDetails(
-                        transaction,
-                        request
-                );
+        VerificationRequest request =
+                new VerificationRequest();
 
-        if (!detailsMatch) {
+        request.setMd("V");
+        request.setPid(callback.getPid());
+        request.setPrn(callback.getPrn());
+        request.setAmt(callback.getAmt());
+        request.setNar(callback.getNar());
+        request.setBid(callback.getBid());
+        request.setCrn("INR");
 
-            transaction.setVerificationStatus(
-                    VerificationStatus.VERIFICATION_FAILED
-            );
+        
+        String verificationChecksum =
+                checksumService.generateVerificationChecksum(request);
 
-            transaction.setErrorMessage(
-                    "Verification details do not match payment transaction"
-            );
+        request.setCheckVal(verificationChecksum);
 
-            transaction.setUpdatedAt(
-                    LocalDateTime.now()
-            );
+        System.out.println("------------------------------------------");
+        System.out.println("VERIFICATION REQUEST CREATED");
+        System.out.println("------------------------------------------");
 
-            transactionRepository.save(transaction);
+        System.out.println("MD        : " + request.getMd());
+        System.out.println("PID       : " + request.getPid());
+        System.out.println("PRN       : " + request.getPrn());
+        System.out.println("AMT       : " + request.getAmt());
+        System.out.println("NAR       : " + request.getNar());
+        System.out.println("BID       : " + request.getBid());
+        System.out.println("CRN       : " + request.getCrn());
+        System.out.println("CHECKVAL  : " + request.getCheckVal());
 
-            return buildFailureResponse(transaction);
-        }
+        // -------------------------------------------------
+        // STEP 3: Verify request
+        // -------------------------------------------------
 
-        /*
-         * Payment must have completed successfully
-         * before verification can succeed.
-         */
-        if (transaction.getStatus()
-                != TransactionStatus.SUCCESS) {
-
-            transaction.setVerificationStatus(
-                    VerificationStatus.VERIFICATION_FAILED
-            );
-
-            transaction.setErrorMessage(
-                    "Payment transaction is not successful"
-            );
-
-            transaction.setUpdatedAt(
-                    LocalDateTime.now()
-            );
-
-            transactionRepository.save(transaction);
-
-            return buildFailureResponse(transaction);
-        }
-
-        /*
-         * Everything matched and payment was successful.
-         */
-        transaction.setVerificationStatus(
-                VerificationStatus.VERIFIED
-        );
-
-        transaction.setErrorMessage(null);
-
-        transaction.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
-        transactionRepository.save(transaction);
-
-        return buildSuccessResponse(transaction);
-    }
-
-    private void validateRequest(
-            VerificationRequest request) {
-
-        if (request == null) {
-
-            throw new InvalidRequestException(
-                    "Verification request cannot be null"
-            );
-        }
-
-        if (!"V".equalsIgnoreCase(request.getMd())) {
-
-            throw new InvalidRequestException(
-                    "MD must be V for a verification request"
-            );
-        }
-    }
-
-    private boolean validateTransactionDetails(
-            Transaction transaction,
-            VerificationRequest request) {
-
-        /*
-         * PRN
-         */
-        if (!safeEquals(
-                transaction.getPrn(),
-                request.getPrn())) {
-
-            return false;
-        }
-
-        /*
-         * PID
-         */
-        if (!safeEquals(
-                transaction.getPayeeId(),
-                request.getPid())) {
-
-            return false;
-        }
-
-        /*
-         * Narration
-         */
-        if (!safeEquals(
-                transaction.getMerchantName(),
-                request.getNar())) {
-
-            return false;
-        }
-
-        /*
-         * Currency
-         */
-        if (!safeEquals(
-                transaction.getCurrency(),
-                request.getCrn())) {
-
-            return false;
-        }
-
-        /*
-         * Amount
-         */
-        if (transaction.getAmount() == null
-                || request.getAmt() == null) {
-
-            return false;
-        }
-
-        try {
-
-            BigDecimal requestedAmount =
-                    new BigDecimal(request.getAmt());
-
-            if (transaction.getAmount()
-                    .compareTo(requestedAmount) != 0) {
-
-                return false;
-            }
-
-        } catch (NumberFormatException exception) {
-
-            return false;
-        }
-
-        /*
-         * Bank Reference ID.
-         *
-         * Only compare it when both sides provide it.
-         */
-        if (request.getBid() != null
-                && !request.getBid().isBlank()) {
-
-            if (!safeEquals(
-                    transaction.getBankReferenceId(),
-                    request.getBid())) {
-
-                return false;
-            }
-        }
-
-        /*
-         * Payment Date.
-         *
-         * Only compare it when the verification request
-         * contains a date.
-         */
-        if (request.getDate() != null
-                && !request.getDate().isBlank()) {
-
-            if (!safeEquals(
-                    transaction.getPaymentDate(),
-                    request.getDate())) {
-
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private boolean safeEquals(
-            String first,
-            String second) {
-
-        if (first == null && second == null) {
-            return true;
-        }
-
-        if (first == null || second == null) {
-            return false;
-        }
-
-        return first.equals(second);
-    }
-
-    private VerificationResponse
-    buildSuccessResponse(
-            Transaction transaction) {
+        System.out.println("------------------------------------------");
+        System.out.println("Calling VerificationService...");
+        System.out.println("------------------------------------------");
 
         VerificationResponse response =
-                new VerificationResponse();
+                verificationService.verify(request);
 
-        response.setStatus("Y");
+        // -------------------------------------------------
+        // STEP 4: Print response
+        // -------------------------------------------------
 
-        response.setPrn(
-                transaction.getPrn()
-        );
+        System.out.println("------------------------------------------");
+        System.out.println("VERIFICATION RESPONSE");
+        System.out.println("------------------------------------------");
 
-        if (transaction.getAmount() != null) {
+        System.out.println("PRN       : " + response.getPrn());
+        System.out.println("Status    : " + response.getStatus());
+        System.out.println("Amount    : " + response.getAmount());
+        System.out.println("Message   : " + response.getMessage());
 
-            response.setAmount(
-                    transaction.getAmount()
-                            .toPlainString()
-            );
+        if ("Y".equalsIgnoreCase(response.getStatus())) {
+
+            System.out.println("------------------------------------------");
+            System.out.println("DOUBLE VERIFICATION SUCCESS");
+
+        } else {
+
+            System.out.println("------------------------------------------");
+            System.out.println("DOUBLE VERIFICATION FAILED");
         }
 
-        response.setMessage(
-                "Transaction verification successful"
-        );
-
-        return response;
-    }
-
-    private VerificationResponse
-    buildFailureResponse(
-            Transaction transaction) {
-
-        VerificationResponse response =
-                new VerificationResponse();
-
-        response.setStatus("N");
-
-        response.setPrn(
-                transaction.getPrn()
-        );
-
-        if (transaction.getAmount() != null) {
-
-            response.setAmount(
-                    transaction.getAmount()
-                            .toPlainString()
-            );
-        }
-
-        response.setMessage(
-                transaction.getErrorMessage() != null
-                        ? transaction.getErrorMessage()
-                        : "Transaction verification failed"
-        );
+        System.out.println("==========================================");
+        System.out.println("        DOUBLE VERIFICATION END");
+        System.out.println("==========================================");
+        System.out.println();
 
         return response;
     }

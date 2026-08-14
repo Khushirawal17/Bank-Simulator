@@ -1,91 +1,209 @@
 package com.example.bank.simulator1.security;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.example.bank.simulator1.config.BankProperties;
 import com.example.bank.simulator1.dto.PaymentRequest;
-
-import static org.junit.jupiter.api.Assertions.*;
+import com.example.bank.simulator1.dto.VerificationRequest;
 
 class ChecksumServiceTest {
 
-	private ChecksumService checksumService;
+    private ChecksumService checksumService;
 
-	@BeforeEach
-	void setUp() {
+    @BeforeEach
+    void setUp() {
 
-		BankProperties properties = new BankProperties();
+        BankProperties bankProperties =
+                new BankProperties();
 
-		BankProperties.Security security = new BankProperties.Security();
+        bankProperties.getSecurity()
+                .setChecksumKey("TEST_SECRET");
 
-		security.setChecksumKey("TEST_CHECKSUM_KEY");
+        checksumService =
+                new ChecksumService(bankProperties);
+    }
 
-		properties.setSecurity(security);
+    // =====================================================
+    // PAYMENT CHECKSUM
+    // =====================================================
 
-		checksumService = new ChecksumService(properties);
-	}
+    @Test
+    void shouldGeneratePaymentChecksum() {
 
-	@Test
-	void shouldGenerateConsistentChecksum() {
+        PaymentRequest request =
+                new PaymentRequest();
 
-		PaymentRequest request = createPaymentRequest();
+        request.setMd("P");
+        request.setPid("TEST001");
+        request.setNar("Test Payment");
+        request.setPrn("PRN001");
+        request.setAmt("100.00");
+        request.setCrn("INR");
+        request.setRu("http://localhost:9090/callback");
 
-		String checksum1 = checksumService.generatePaymentChecksum(request);
+        String checksum =
+                checksumService.generatePaymentChecksum(request);
 
-		String checksum2 = checksumService.generatePaymentChecksum(request);
+        assertNotNull(checksum);
+        assertEquals(64, checksum.length());
+    }
 
-		assertEquals(checksum1, checksum2);
-	}
+    @Test
+    void shouldValidateCorrectPaymentChecksum() {
 
-	@Test
-	void shouldGenerateDifferentChecksumWhenAmountChanges() {
+        PaymentRequest request =
+                new PaymentRequest();
 
-		PaymentRequest request = createPaymentRequest();
+        request.setMd("P");
+        request.setPid("TEST001");
+        request.setNar("Test Payment");
+        request.setPrn("PRN001");
+        request.setAmt("100.00");
+        request.setCrn("INR");
+        request.setRu("http://localhost:9090/callback");
 
-		String originalChecksum = checksumService.generatePaymentChecksum(request);
+        String checksum =
+                checksumService.generatePaymentChecksum(request);
 
-		request.setAmt("200.00");
+        request.setCheckVal(checksum);
 
-		String changedChecksum = checksumService.generatePaymentChecksum(request);
+        boolean result =
+                checksumService.validatePaymentRequest(request);
 
-		assertNotEquals(originalChecksum, changedChecksum);
-	}
+        assertTrue(result);
+    }
 
-	@Test
-	void shouldValidateCorrectChecksum() {
+    @Test
+    void shouldRejectIncorrectPaymentChecksum() {
 
-		PaymentRequest request = createPaymentRequest();
+        PaymentRequest request =
+                new PaymentRequest();
 
-		String checksum = checksumService.generatePaymentChecksum(request);
+        request.setMd("P");
+        request.setPid("TEST001");
+        request.setNar("Test Payment");
+        request.setPrn("PRN001");
+        request.setAmt("100.00");
+        request.setCrn("INR");
+        request.setRu("http://localhost:9090/callback");
 
-		request.setCheckVal(checksum);
+        request.setCheckVal("WRONG_CHECKSUM");
 
-		assertTrue(checksumService.validatePaymentRequest(request));
-	}
+        boolean result =
+                checksumService.validatePaymentRequest(request);
 
-	@Test
-	void shouldRejectIncorrectChecksum() {
+        assertFalse(result);
+    }
 
-		PaymentRequest request = createPaymentRequest();
+    // =====================================================
+    // VERIFICATION CHECKSUM
+    // =====================================================
 
-		request.setCheckVal("INVALID_CHECKSUM");
+    @Test
+    void shouldGenerateVerificationChecksum() {
 
-		assertFalse(checksumService.validatePaymentRequest(request));
-	}
+        VerificationRequest request =
+                new VerificationRequest();
 
-	private PaymentRequest createPaymentRequest() {
+        request.setMd("V");
+        request.setPid("TEST001");
+        request.setPrn("PRN001");
+        request.setAmt("100.00");
+        request.setNar("Test Payment");
+        request.setBid("BANK001");
+        request.setCrn("INR");
+        request.setDate("2026-08-12");
+        request.setData("TEST_DATA");
 
-		PaymentRequest request = new PaymentRequest();
+        String checksum =
+                checksumService
+                        .generateVerificationChecksum(request);
 
-		request.setMd("P");
-		request.setPid("TEST001");
-		request.setNar("TESTMERCHANT");
-		request.setPrn("TXN1001");
-		request.setAmt("100.00");
-		request.setCrn("INR");
-		request.setRu("http://localhost:8081/callback");
+        assertNotNull(checksum);
+        assertEquals(64, checksum.length());
+    }
 
-		return request;
-	}
+    @Test
+    void shouldValidateCorrectVerificationChecksum() {
+
+        VerificationRequest request =
+                new VerificationRequest();
+
+        request.setMd("V");
+        request.setPid("TEST001");
+        request.setPrn("PRN001");
+        request.setAmt("100.00");
+        request.setNar("Test Payment");
+        request.setBid("BANK001");
+        request.setCrn("INR");
+        request.setDate("2026-08-12");
+        request.setData("TEST_DATA");
+
+        String checksum =
+                checksumService
+                        .generateVerificationChecksum(request);
+
+        request.setCheckVal(checksum);
+
+        boolean result =
+                checksumService
+                        .validateVerificationRequest(request);
+
+        assertTrue(result);
+    }
+
+    @Test
+    void shouldRejectIncorrectVerificationChecksum() {
+
+        VerificationRequest request =
+                new VerificationRequest();
+
+        request.setMd("V");
+        request.setPid("TEST001");
+        request.setPrn("PRN001");
+        request.setAmt("100.00");
+        request.setNar("Test Payment");
+        request.setBid("BANK001");
+        request.setCrn("INR");
+        request.setDate("2026-08-12");
+        request.setData("TEST_DATA");
+
+        request.setCheckVal("WRONG_CHECKSUM");
+
+        boolean result =
+                checksumService
+                        .validateVerificationRequest(request);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void shouldAcceptChecksumIgnoringCase() {
+
+        PaymentRequest request =
+                new PaymentRequest();
+
+        request.setMd("P");
+        request.setPid("TEST001");
+        request.setNar("Test Payment");
+        request.setPrn("PRN001");
+        request.setAmt("100.00");
+        request.setCrn("INR");
+        request.setRu("http://localhost:9090/callback");
+
+        String checksum =
+                checksumService
+                        .generatePaymentChecksum(request);
+
+        request.setCheckVal(checksum.toUpperCase());
+
+        boolean result =
+                checksumService
+                        .validatePaymentRequest(request);
+
+        assertTrue(result);
+    }
 }

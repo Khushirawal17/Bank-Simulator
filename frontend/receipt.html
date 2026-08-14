@@ -4,32 +4,43 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Transaction Receipt | BillDesk Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <header class="topbar">
+    <div class="brand">BillDesk</div>
+    <div class="secure">🔒 Secure Payment</div>
+  </header>
+
   <main class="container narrow">
     <section class="receipt">
       <div class="receipt-logo">BillDesk</div>
       <div id="receiptIcon" class="result-icon">✓</div>
-      <h1 id="receiptTitle">Transaction Successful</h1>
-      <p class="muted" id="receiptMessage">Transaction successful</p>
+      <h1 id="receiptTitle" style="font-size:20px;margin:0 0 6px;">Transaction Successful</h1>
+      <p class="muted" id="receiptMessage" style="color:var(--muted);margin:0 0 18px;">Transaction successful</p>
 
       <div class="receipt-amount" id="receiptAmount">₹999.00</div>
 
-      <div class="receipt-status">
-        <span>TRANSACTION STATUS</span>
-        <strong id="receiptStatus">SUCCESS</strong>
+      <div class="receipt-status" style="display:inline-flex;flex-direction:column;gap:5px;background:#f9fafb;padding:10px 22px;border-radius:10px;margin-bottom:20px;">
+        <span style="font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.08em;">TRANSACTION STATUS</span>
+        <strong id="receiptStatus" style="font-size:13px;">SUCCESS</strong>
       </div>
 
       <div class="receipt-details">
         <div><span>PRN</span><strong id="receiptPrn">—</strong></div>
-        <div><span>Bank</span><strong>DBS Corporate Bank</strong></div>
-        <div><span>Payment Method</span><strong>Net Banking</strong></div>
+        <div><span>Merchant</span><strong id="receiptMerchant">—</strong></div>
+        <div><span>Bank</span><strong id="receiptBank">DBS Corporate Bank</strong></div>
+        <div><span>Payment method</span><strong id="receiptMethod">Net Banking</strong></div>
         <div><span>Scenario</span><strong id="receiptScenario">Normal</strong></div>
         <div><span>Verification</span><strong>Completed</strong></div>
       </div>
 
-      <button class="primary full" onclick="window.location.href='index.html'">Done</button>
+      <div class="receipt-footer">
+        <button class="ghost-btn full" onclick="window.print()">Download receipt</button>
+        <button class="primary full" onclick="finishTransaction()">Start new transaction</button>
+      </div>
     </section>
   </main>
 

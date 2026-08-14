@@ -3,24 +3,84 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Merchant Checkout | BillDesk Demo</title>
+  <title>boAt Rockerz 450 | AudioHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">Merchant Demo</div>
+    <div class="brand">AudioHub <small>Retail</small></div>
     <div class="secure">🔒 Secure Checkout</div>
   </header>
 
   <main class="container">
-    <section class="merchant-card">
-      <div class="product-image">DB</div>
+    <p class="breadcrumb">Home / Audio / Headphones / <span>boAt Rockerz 450</span></p>
+
+    <section class="product-page">
+      <div class="gallery">
+        <div class="main-image">🎧</div>
+        <div class="thumb-row">
+          <div class="thumb active">🎧</div>
+          <div class="thumb">📦</div>
+          <div class="thumb">🔌</div>
+          <div class="thumb">📋</div>
+        </div>
+        <div class="gallery-actions">
+          <button class="wishlist-btn full">♡ Add to wishlist</button>
+        </div>
+      </div>
+
       <div class="product-info">
-        <p class="eyebrow">Digital Product</p>
-        <h1>Premium Subscription</h1>
-        <p class="muted">One-month premium access for the demo merchant.</p>
-        <div class="price">₹999.00 <span>INR</span></div>
-        <button class="primary full" onclick="startCheckout()">Pay with BillDesk</button>
+        <p class="seller-line">Visit the AudioHub Retail Store</p>
+        <h1 class="product-title">boAt Rockerz 450 Wireless Bluetooth On-Ear Headphones with Mic, 15H Playtime</h1>
+
+        <div class="rating-row">
+          <span class="rating-pill">4.3 ★</span>
+          <span class="rating-count">48,213 ratings and 3,102 reviews</span>
+        </div>
+
+        <!-- <div class="badges">
+          <span class="badge assured">Assured Delivery</span>
+          <span class="badge bestseller">Bestseller</span>
+        </div> -->
+
+        <div class="price-block">
+          <div class="price-row">
+            <span class="price-now" id="displayPrice">₹999</span>
+            <span class="price-mrp">₹2,499</span>
+            <span class="price-off">60% off</span>
+          </div>
+          <p class="price-note">Inclusive of all taxes · Free shipping</p>
+        </div>
+
+        <!-- <p class="offers-title">Available offers</p>
+        <ul class="offers-list">
+          <li><b>Bank Offer</b> 5% cashback on BillDesk Net Banking, up to ₹50</li>
+          <li><b>Special Price</b> Get extra 12% off (price inclusive of discount)</li>
+          <li><b>No Cost EMI</b> available on this product</li>
+        </ul> -->
+
+        <!-- <div class="delivery-box">
+          <span>📍</span>
+          <div>
+            <strong>Delivery in 2 - 4 business days</strong>
+            Free delivery on this order. Easy 7 day replacement available.
+          </div>
+        </div> -->
+
+        <p class="highlights-title">Highlights</p>
+        <ul class="highlights">
+          <li>15 hours total playback on a single charge</li>
+          <li>40mm dynamic drivers for immersive bass</li>
+          <li>Padded ear cushions for all-day comfort</li>
+          <li>Integrated mic for hands-free calling</li>
+        </ul>
+
+        <div class="buy-row">
+          <!-- <button class="cart-btn">🛒 Add to cart</button> -->
+          <button class="primary" onclick="startCheckout()">⚡ Pay With BillDesk</button>
+        </div>
       </div>
     </section>
   </main>
